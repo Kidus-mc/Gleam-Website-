@@ -1,0 +1,52 @@
+/* Gleam light mode + theme switch. Dark is the default; light applies when <html data-theme="light">. */
+:root[data-theme="light"]{
+  --background:#ffffff; --foreground:#0e0e10; --surface:#f3f4f6; --surface-2:#e9eaee;
+  --muted:#55565c; --line:rgba(14,14,16,0.1); --line-strong:rgba(14,14,16,0.22);
+  --accent:#cc2a0c; --accent-2:#a82208; --chrome:#2a2b30; --ok:#1f7a3a;
+  color-scheme:light;
+}
+:root[data-theme="light"] .site-header.scrolled{background:rgba(255,255,255,0.82)}
+:root[data-theme="light"] .drawer-scrim{background:rgba(14,14,16,0.4)}
+:root[data-theme="light"] .liquid .lq-vig{background:radial-gradient(120% 120% at 50% 120%,rgba(14,14,16,0.28),transparent 60%)}
+:root[data-theme="light"] .m-bar a{box-shadow:0 8px 24px rgba(204,42,12,0.3)}
+:root[data-theme="light"] input:hover,
+:root[data-theme="light"] select:hover,
+:root[data-theme="light"] textarea:hover{border-color:rgba(14,14,16,0.4)}
+:root[data-theme="light"] .prose p,
+:root[data-theme="light"] .prose ul{color:#2f3035}
+/* the logo is white artwork: show it dark on light backgrounds */
+:root[data-theme="light"] .logo img,
+:root[data-theme="light"] .foot-bar img,
+:root[data-theme="light"] header nav img{filter:invert(1)}
+
+/* theme switch button */
+.theme-btn{flex:none;display:inline-grid;place-items:center;width:44px;height:44px;padding:0;border-radius:9999px;border:1px solid var(--line-strong);background:transparent;color:var(--foreground);cursor:pointer;pointer-events:auto;transition:border-color 300ms ease-out,transform 400ms cubic-bezier(0.16,1,0.3,1)}
+.theme-btn:hover{border-color:var(--foreground)}
+.theme-btn:active{transform:scale(0.92)}
+.theme-btn[aria-expanded="true"]{border-color:var(--foreground)}
+.theme-btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.theme-btn svg{width:20px;height:20px;grid-area:1/1;transition:opacity 300ms ease-out,transform 500ms cubic-bezier(0.16,1,0.3,1)}
+.theme-btn .i-sun{opacity:0;transform:rotate(90deg) scale(0.6)}
+:root[data-theme="light"] .theme-btn .i-sun{opacity:1;transform:none}
+:root[data-theme="light"] .theme-btn .i-moon{opacity:0;transform:rotate(-90deg) scale(0.6)}
+.nav-end{display:flex;align-items:center;gap:12px}
+
+/* smooth color change while switching */
+html.theme-anim,html.theme-anim *,html.theme-anim *::before,html.theme-anim *::after{transition:background-color 450ms ease-out,color 450ms ease-out,border-color 450ms ease-out,fill 450ms ease-out,stroke 450ms ease-out,filter 450ms ease-out!important}
+@media (prefers-reduced-motion:reduce){.theme-btn svg{transition:none}html.theme-anim *{transition:none!important}}
+/* appearance menu */
+.theme-menu{position:fixed;z-index:120;min-width:15rem;padding:8px;border:1px solid var(--line-strong);border-radius:14px;background:var(--surface);color:var(--foreground);font-family:"Onest",system-ui,-apple-system,"Segoe UI",sans-serif;box-shadow:0 18px 50px rgba(0,0,0,0.35);opacity:0;transform:translateY(-6px) scale(0.98);transform-origin:top right;transition:opacity 200ms ease-out,transform 260ms cubic-bezier(0.16,1,0.3,1)}
+.theme-menu.on{opacity:1;transform:none}
+:root[data-theme="light"] .theme-menu{background:#ffffff;box-shadow:0 18px 50px rgba(14,14,16,0.16)}
+.theme-menu .tm-title{margin:4px 10px 6px;font-size:12px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
+.theme-menu button{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;font-size:15px;text-align:left;cursor:pointer;transition:background-color 200ms ease-out}
+.theme-menu button:hover,.theme-menu button:focus-visible{background:var(--surface-2);outline:none}
+.theme-menu button:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.theme-menu .tm-icon{display:grid;place-items:center;width:20px;height:20px;flex:none;color:var(--muted)}
+.theme-menu .tm-icon svg{width:20px;height:20px}
+.theme-menu .tm-label{flex:1 1 auto}
+.theme-menu .tm-check{width:18px;height:18px;flex:none;color:var(--accent);opacity:0}
+.theme-menu [aria-checked="true"] .tm-check{opacity:1}
+.theme-menu [aria-checked="true"] .tm-icon{color:var(--foreground)}
+.theme-menu [aria-checked="true"]{font-weight:600}
+@media (prefers-reduced-motion:reduce){.theme-menu{transition:none}}
