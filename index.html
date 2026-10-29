@@ -297,7 +297,7 @@ html.js .who-figure[data-reveal].in{transform:none}
 .addr-dlg .a-cancel{border:1px solid var(--line-strong);background:none;color:var(--foreground)}
 .zip-form.has-zip label,.zip-form.has-zip .zip-row{display:none}
 .zip-change{align-self:flex-start;min-height:2.75rem;padding:0;border:0;background:none;color:var(--foreground);font:inherit;font-size:0.9375rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-.hero-zip.has-zip .zip-row input{display:none}
+.hero-zip.has-zip .zip-row input,.hero-zip.has-zip > .label{display:none}
 @media (max-width:767px){.site-nav .nav-right{gap:0.625rem}}
 .d-empty{padding-block:2rem;color:var(--muted);border-bottom:1px solid var(--line);opacity:1!important;transform:none!important}
 .d-empty a,.drawer-foot a{color:var(--foreground);text-decoration:underline;text-underline-offset:3px}
@@ -486,7 +486,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
       <div class="hero-copy" id="heroCopy" data-reveal style="--y:16px;--dur:520ms">
         <p>Pro car detailing that comes to you. Book in a minute, follow your detailer to the curb, and drive away gleaming.</p>
         <a href="#packages" class="hero-link">Book a detail <span aria-hidden="true">↗</span></a>
-        <form class="hero-zip" id="heroZip" novalidate>
+        <form class="hero-zip has-zip" id="heroZip" novalidate>
           <label for="heroZipInput" class="label">Find detailers near you</label>
           <div class="zip-row"><input id="heroZipInput" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="Your ZIP code"><button type="submit" class="zip-go">Book a detail</button></div>
           <p class="zip-note" id="heroZipNote" aria-live="polite"></p>
@@ -673,11 +673,11 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
       <button type="button" class="drawer-close" id="drawerClose" aria-label="Close detailer list"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
     </div>
     <div class="drawer-body">
-      <form class="zip-form" id="zipForm" novalidate>
+      <form class="zip-form has-zip" id="zipForm" novalidate>
         <label for="custZip" class="label">Your ZIP code</label>
         <div class="zip-row"><input id="custZip" name="zip" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="e.g. 11201"><button type="submit" class="zip-go">Find detailers</button></div>
-        <p class="zip-note" id="zipNote" aria-live="polite"></p>
-        <button type="button" class="zip-change" id="zipChange" hidden>Change address</button>
+        <p class="zip-note" id="zipNote" aria-live="polite">Showing all detailers. Set your address to see who comes to you.</p>
+        <button type="button" class="zip-change" id="zipChange">Set your address</button>
       </form>
       <div class="sort" id="sortWrap" role="group" aria-label="Sort detailers">
         <span class="label">Sort</span>
@@ -882,6 +882,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   try{ const z=localStorage.getItem(ZK); if(/^\d{5}$/.test(z||'')) custZip.value=z }catch(e){}
 
   function covers(d){
+    if(!custLoc) return {ok:true,dist:null};
     const p=ZT&&ZT[String(d.zip||'')];
     if(custLoc.lat!=null&&p){
       const m=miles(custLoc.lat,custLoc.lng,+p.latitude,+p.longitude); return {ok:m<=((+d.radiusMiles)||10),dist:m};
@@ -894,14 +895,13 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     drawer.classList.remove('listed');
     if(loadState==='loading') return empty('Loading detailers…');
     if(loadState==='error') return empty('We couldn’t load detailers right now. Check your connection and try again.');
-    if(!custLoc) return empty('Enter your ZIP code to see the detailers who come to you, and what each one charges.');
     const rows=DETAILERS.filter(d=>priceOf(d,cur)!=null).map(d=>Object.assign({d},covers(d))).filter(r=>r.ok)
       .sort((a,b)=>sortBy==='price'?priceOf(a.d,cur)-priceOf(b.d,cur):((a.dist==null?1e9:a.dist)-(b.dist==null?1e9:b.dist)));
-    if(!rows.length) return empty('No detailers cover '+esc(custLoc.zip)+' for '+PKG[cur]+' yet. We’re adding detailers every week. <a href="detailers.html">Are you a detailer? Join Gleam</a>');
+    if(!rows.length) return empty((custLoc?'No detailers cover '+esc(custLoc.zip)+' for ':'No detailers offer ')+PKG[cur]+' yet. We’re adding detailers every week. <a href="detailers.html">Are you a detailer? Join Gleam</a>');
     sortWrap.hidden=false;
     list.innerHTML=rows.map((r,i)=>{
       const d=r.d, id=esc(d._id), p=priceOf(d,cur), where=[d.city,d.state].filter(Boolean).map(esc).join(', ');
-      const sub=(r.dist!=null?r.dist.toFixed(1)+' mi away':'Near you')+(where?' · '+where:'');
+      const sub=[r.dist!=null?r.dist.toFixed(1)+' mi away':(custLoc?'Near you':''),where].filter(Boolean).join(' · ');
       let act;
       if(sent[d._id+'|'+cur]) act='<p class="d-picked" role="status">Request sent. '+esc(firstName(d.name))+' or the Gleam team will contact you at '+esc(sent[d._id+'|'+cur])+' to confirm a time.</p>';
       else if(openFor===d._id) act=
@@ -936,7 +936,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     custLoc=info?{zip,lat:info.lat,lng:info.lng}:{zip,lat:null,lng:null};
     try{localStorage.setItem(ZK,zip)}catch(e){}
     zipNote.textContent=info?'Showing detailers who travel to '+info.city+', '+info.state+' '+zip+'.':'Showing detailers in the '+zip.slice(0,3)+'xx area.';
-    zipForm.classList.add('has-zip'); document.getElementById('zipChange').hidden=false; document.getElementById('heroZip').classList.add('has-zip');
+    zipForm.classList.add('has-zip'); document.getElementById('zipChange').textContent='Change address'; document.getElementById('heroZip').classList.add('has-zip');
     openFor=null; updateCards(); render();
   }
   if(/^\d{5}$/.test(custZip.value)) findZip(custZip.value);
@@ -952,7 +952,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     if(lenis) lenis.stop();
     const z=custZip.value.trim();
     if(!custLoc&&/^\d{5}$/.test(z)) findZip(z);
-    setTimeout(()=>(custLoc?dClose:custZip).focus({preventScroll:true}),60);
+    setTimeout(()=>dClose.focus({preventScroll:true}),60);
   }
   function closeDrawer(){
     if(!document.body.classList.contains('drawer-open')) return;
@@ -1013,9 +1013,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   if(custZip.value) heroZipInput.value=custZip.value;
   heroZip.addEventListener('submit',async e=>{
     e.preventDefault(); const zip=heroZipInput.value.trim();
-    if(!/^\d{5}$/.test(zip)){ heroZipNote.textContent='Enter a 5-digit ZIP code.'; heroZipInput.focus(); return }
-    heroZipNote.textContent='Finding detailers near '+zip+'…';
-    custZip.value=zip; await findZip(zip); heroZipNote.textContent='';
+    if(/^\d{5}$/.test(zip)&&(!custLoc||custLoc.zip!==zip)){ custZip.value=zip; await findZip(zip) }
     const t=document.getElementById('packages'); if(lenis) lenis.scrollTo(t,{offset:-60}); else t.scrollIntoView({behavior:'smooth'});
   });
   /* saved address: member profile in Wix (only the member can read or change it) */
