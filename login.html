@@ -110,7 +110,7 @@
     <section>
       <p class="eyebrow">Your Gleam account</p>
       <h1 id="authTitle">Log in</h1>
-      <p class="auth-lede">One account for customers and detailers.</p>
+      <p class="auth-lede">Log in or create a free account to see Gleam. One account for customers and detailers.</p>
       <ul class="auth-points">
         <li><b>Customers</b>See the booking requests you've sent and who they went to.</li>
         <li><b>Detailers</b>Check whether your application is under review or live, and see the prices customers see.</li>
@@ -122,7 +122,8 @@
 
       <div id="signedIn" class="stack" hidden>
         <p class="ok-note" id="signedInText">You're logged in.</p>
-        <a class="pill wide" href="/account.html">Go to my account</a>
+        <a class="pill wide" href="/">Go to Gleam</a>
+        <a class="ghost" href="/account.html">My account</a>
         <button type="button" class="linkish" id="logoutBtn">Log out</button>
       </div>
 
@@ -174,7 +175,7 @@ import { subscribeMember, getMemberState, login, register, verifyEmail, logout, 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const rt = params.get('returnTo') || '';
-const returnTo = rt.startsWith('/') && !rt.startsWith('//') ? rt : '/account.html';
+const returnTo = rt.startsWith('/') && !rt.startsWith('//') && !rt.startsWith('/login') ? rt : '/';
 let mode = params.get('mode') === 'signup' ? 'up' : 'in';
 let busy = false;
 
@@ -301,6 +302,7 @@ function render(){
   const s = getMemberState();
   $('authLoading').hidden = !s.loading;
   if (s.loading) { $('authPanel').hidden = true; $('signedIn').hidden = true; return; }
+  if (s.loggedIn && !busy && params.has('returnTo')) { location.replace(returnTo); return; }
   if (s.loggedIn && !busy) {
     $('authPanel').hidden = true; $('signedIn').hidden = false;
     const who = s.member && (s.member.loginEmail || s.member.displayName);
