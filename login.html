@@ -137,6 +137,7 @@
             <label class="f" for="firstName"><span>First name</span><input id="firstName" autocomplete="given-name" maxlength="40"></label>
             <label class="f" for="lastName"><span>Last name</span><input id="lastName" autocomplete="family-name" maxlength="40"></label>
           </div>
+          <label class="f" for="zip" id="zipRow" hidden><span>ZIP code</span><input id="zip" inputmode="numeric" autocomplete="postal-code" maxlength="5"><small class="fine">We use it to show detailers near you. You can change it anytime.</small></label>
           <label class="f" for="email"><span>Email</span><input id="email" type="email" autocomplete="email" maxlength="120" required></label>
           <label class="f" for="password"><span>Password</span><span class="pw"><input id="password" type="password" autocomplete="current-password" maxlength="100" required><button type="button" id="pwToggle" aria-controls="password" aria-pressed="false">Show</button></span></label>
           <div id="captchaBox" class="cap" hidden></div>
@@ -218,12 +219,30 @@ async function withCap(action, fn){
   if (ct === null) return { state: 'FAILURE', errorCode: 'needCheck' };
   return fn({ captchaTokens: ct });
 }
+// ZIP from sign-up goes to the member's private profile once they're logged in
+async function syncProfile(){
+  const work = (async () => {
+    let pending = null; try { pending = JSON.parse(localStorage.getItem('gleam-pending-profile') || 'null'); } catch (x) {}
+    const q = await wixRequest('/wix-data/v2/items/query', { body: { dataCollectionId: 'MemberProfiles', query: { sort: [{ fieldName: '_updatedDate', order: 'DESC' }], paging: { limit: 1 } } } });
+    const it = q && q.dataItems && q.dataItems[0];
+    if (pending && /^\d{5}$/.test(pending.zip || '')) {
+      const data = { zip: pending.zip, address: (it && it.data && it.data.address) || '' };
+      if (it) await wixRequest('/wix-data/v2/items/' + it.id, { method: 'PUT', body: { dataCollectionId: 'MemberProfiles', dataItem: { id: it.id, data } } });
+      else await wixRequest('/wix-data/v2/items', { body: { dataCollectionId: 'MemberProfiles', dataItem: { data } } });
+      try { localStorage.removeItem('gleam-pending-profile'); localStorage.setItem('gleam-address', data.address); } catch (x) {}
+    } else if (it && it.data && /^\d{5}$/.test(it.data.zip || '')) {
+      try { localStorage.setItem('gleam-zip', it.data.zip); localStorage.setItem('gleam-address', it.data.address || ''); } catch (x) {}
+    }
+  })();
+  return Promise.race([work.catch(() => {}), new Promise(r => setTimeout(r, 6000))]);
+}
 function show(id){ for (const x of ['authForm','codeForm','pending','resetForm']) $(x).hidden = x !== id; }
 function setMode(m){
   mode = m;
   $('tabIn').setAttribute('aria-selected', String(m === 'in'));
   $('tabUp').setAttribute('aria-selected', String(m === 'up'));
   $('nameRow').hidden = m !== 'up';
+  $('zipRow').hidden = m !== 'up';
   $('signupFine').hidden = m !== 'up';
   $('forgotBtn').hidden = m !== 'in';
   $('authBtn').textContent = m === 'in' ? 'Log in' : 'Create account';
@@ -245,7 +264,7 @@ $('pwToggle').addEventListener('click', () => {
 
 function handle(result, errEl){
   if (!result) return;
-  if (result.state === 'SUCCESS') { location.assign(returnTo); return; }
+  if (result.state === 'SUCCESS') { syncProfile().finally(() => location.assign(returnTo)); return; }
   if (result.state === 'EMAIL_VERIFICATION_REQUIRED') { show('codeForm'); $('code').focus(); return; }
   if (result.state === 'OWNER_APPROVAL_REQUIRED') { show('pending'); return; }
   if (result.errorCode === 'missingCaptchaToken' || result.errorCode === 'invalidCaptchaToken') {
@@ -268,6 +287,9 @@ $('authForm').addEventListener('submit', e => {
   if (!pw) { $('authErr').textContent = 'Enter your password.'; $('password').focus(); return; }
   if (mode === 'in') run($('authBtn'), 'Logging in…', () => withCap('login', o => login(email, pw, o)), $('authErr'));
   else {
+    const zip = $('zip').value.trim();
+    if (!/^\d{5}$/.test(zip)) { $('authErr').textContent = 'Enter your 5-digit ZIP code.'; $('zip').focus(); return; }
+    try { localStorage.setItem('gleam-pending-profile', JSON.stringify({ zip })); localStorage.setItem('gleam-zip', zip); } catch (x) {}
     if (pw.length < 6) { $('authErr').textContent = 'Use at least 6 characters for your password.'; $('password').focus(); return; }
     const profile = { firstName: $('firstName').value.trim() || undefined, lastName: $('lastName').value.trim() || undefined };
     run($('authBtn'), 'Creating account…', () => withCap('signup', o => register(email, pw, profile, o)), $('authErr'));

@@ -276,6 +276,29 @@ html.js .who-figure[data-reveal].in{transform:none}
 .zip-go{min-height:2.75rem;padding:0 1.25rem;border-radius:9999px;background:var(--foreground);color:var(--background);font-size:var(--fs-eyebrow);font-weight:600;text-transform:uppercase;letter-spacing:0.14em;transition:background-color 300ms ease-out}
 .zip-go:hover{background:var(--chrome)}
 .zip-note{font-size:0.9375rem;color:var(--muted);min-height:1.5em}
+/* saved address: header button, dialog, ZIP search collapses once known */
+.addr-btn{flex:none;display:inline-flex;align-items:center;gap:0.4rem;min-height:44px;padding:0 0.9rem 0 0.75rem;border-radius:9999px;border:1px solid var(--line-strong);background:transparent;color:var(--foreground);font:inherit;font-size:var(--fs-eyebrow);font-weight:600;letter-spacing:0.08em;font-variant-numeric:tabular-nums;cursor:pointer;transition:border-color 300ms ease-out}
+.addr-btn:hover{border-color:var(--foreground)}
+.addr-btn svg{width:18px;height:18px;flex:none}
+.addr-dlg{margin:auto;width:min(28rem,calc(100% - 2rem));padding:0;border:1px solid var(--line-strong);border-radius:0.75rem;background:var(--surface);color:var(--foreground)}
+.addr-dlg::backdrop{background:rgba(0,0,0,0.6)}
+.addr-dlg form{display:flex;flex-direction:column;gap:1rem;padding:1.5rem}
+.addr-dlg h2{font-size:1.375rem;font-weight:600;line-height:1.2}
+.addr-dlg p{font-size:0.9375rem;color:var(--muted)}
+.addr-dlg .f{display:flex;flex-direction:column;gap:0.375rem}
+.addr-dlg .f span{font-size:0.875rem;color:var(--muted)}
+.addr-dlg input{font:inherit;font-size:max(16px,1rem);color:var(--foreground);background:var(--background);border:1px solid var(--line-strong);border-radius:0.5rem;padding:0 1rem;min-height:2.75rem;width:100%}
+.addr-dlg input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.addr-dlg .a-err{color:var(--accent-2);font-size:0.9375rem}
+.addr-dlg .a-err:empty{display:none}
+.addr-dlg .a-row{display:flex;gap:0.75rem;flex-wrap:wrap}
+.addr-dlg .a-row button{flex:1 1 8rem;min-height:2.75rem;border-radius:9999px;font:inherit;font-size:var(--fs-eyebrow);font-weight:600;text-transform:uppercase;letter-spacing:0.14em;cursor:pointer}
+.addr-dlg .a-save{border:0;background:var(--accent);color:var(--background)}
+.addr-dlg .a-cancel{border:1px solid var(--line-strong);background:none;color:var(--foreground)}
+.zip-form.has-zip label,.zip-form.has-zip .zip-row{display:none}
+.zip-change{align-self:flex-start;min-height:2.75rem;padding:0;border:0;background:none;color:var(--foreground);font:inherit;font-size:0.9375rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.hero-zip.has-zip .zip-row input{display:none}
+@media (max-width:767px){.site-nav .nav-right{gap:0.625rem}}
 .d-empty{padding-block:2rem;color:var(--muted);border-bottom:1px solid var(--line);opacity:1!important;transform:none!important}
 .d-empty a,.drawer-foot a{color:var(--foreground);text-decoration:underline;text-underline-offset:3px}
 .d-form{width:100%;display:flex;flex-direction:column;gap:1rem}
@@ -432,6 +455,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
         <li><a href="/login.html" data-account-link>Log in</a></li>
       </ul>
       <a href="#packages" class="nav-cta">Book a detail</a>
+      <button type="button" class="addr-btn" id="addrBtn" aria-haspopup="dialog" aria-label="Set your address"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span id="addrBtnText">Address</span></button>
       <button type="button" class="theme-btn" data-theme-toggle aria-pressed="false" aria-label="Switch to light mode" title="Light mode"><svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg></button>
       <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span><span></span></button>
     </div>
@@ -627,6 +651,17 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
 
 
 <div class="m-bar" id="mBar"><a href="#packages">Book a detail <span aria-hidden="true">→</span></a></div>
+<dialog class="addr-dlg" id="addrDlg" aria-labelledby="addrTitle" data-lenis-prevent>
+  <form id="addrForm" novalidate>
+    <h2 id="addrTitle">Your address</h2>
+    <p>We use it to show detailers who come to you and to fill in your booking. Change it anytime.</p>
+    <label class="f" for="addrZip"><span>ZIP code</span><input id="addrZip" inputmode="numeric" autocomplete="postal-code" maxlength="5" required></label>
+    <label class="f" for="addrStreet"><span>Street address (optional)</span><input id="addrStreet" autocomplete="street-address" maxlength="150" placeholder="e.g. 120 Court St, Brooklyn"></label>
+    <p class="a-err" id="addrErr" role="alert"></p>
+    <div class="a-row"><button type="button" class="a-cancel" id="addrCancel">Cancel</button><button type="submit" class="a-save" id="addrSave">Save</button></div>
+  </form>
+</dialog>
+
 <div class="drawer-wrap" id="drawerWrap">
   <div class="drawer-scrim" id="drawerScrim"></div>
   <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" data-lenis-prevent>
@@ -642,6 +677,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
         <label for="custZip" class="label">Your ZIP code</label>
         <div class="zip-row"><input id="custZip" name="zip" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="e.g. 11201"><button type="submit" class="zip-go">Find detailers</button></div>
         <p class="zip-note" id="zipNote" aria-live="polite"></p>
+        <button type="button" class="zip-change" id="zipChange" hidden>Change address</button>
       </form>
       <div class="sort" id="sortWrap" role="group" aria-label="Sort detailers">
         <span class="label">Sort</span>
@@ -839,7 +875,9 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   const dEyebrow=document.getElementById('drawerEyebrow'), dClose=document.getElementById('drawerClose');
   const zipForm=document.getElementById('zipForm'), custZip=document.getElementById('custZip'), zipNote=document.getElementById('zipNote'), sortWrap=document.getElementById('sortWrap');
   const sortBtns=[...document.querySelectorAll('[data-sort]')];
-  const ZK='gleam-zip';
+  const ZK='gleam-zip', AK='gleam-address';
+  const GP={id:null,zip:'',address:''};
+  try{ GP.zip=localStorage.getItem(ZK)||''; GP.address=localStorage.getItem(AK)||'' }catch(e){}
   let cur=null, sortBy='price', openFor=null, sent={}, lastFocus=null;
   try{ const z=localStorage.getItem(ZK); if(/^\d{5}$/.test(z||'')) custZip.value=z }catch(e){}
 
@@ -872,7 +910,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
             '<label class="f"><span>Your name</span><input name="customerName" required autocomplete="name" maxlength="80"></label>'+
             '<label class="f"><span>Phone</span><input name="phone" type="tel" required autocomplete="tel" maxlength="20"></label>'+
             '<label class="f"><span>Email (optional)</span><input name="email" type="email" autocomplete="email" maxlength="120"></label>'+
-            '<label class="f f-wide"><span>Where’s the car? (street address)</span><input name="address" required autocomplete="street-address" maxlength="150" placeholder="e.g. 120 Court St, Brooklyn"></label>'+
+            '<label class="f f-wide"><span>Where’s the car? (street address)</span><input name="address" required autocomplete="street-address" maxlength="150" placeholder="e.g. 120 Court St, Brooklyn" value="'+esc(GP.address)+'"></label>'+
             '<label class="f"><span>When works for you?</span><input name="preferredTime" maxlength="80" placeholder="e.g. Saturday morning"></label>'+
             addonBox(d)+
             '<label class="f f-wide"><span>Notes (optional)</span><input name="notes" maxlength="300" placeholder="Car make and model, where it’s parked"></label>'+
@@ -898,6 +936,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     custLoc=info?{zip,lat:info.lat,lng:info.lng}:{zip,lat:null,lng:null};
     try{localStorage.setItem(ZK,zip)}catch(e){}
     zipNote.textContent=info?'Showing detailers who travel to '+info.city+', '+info.state+' '+zip+'.':'Showing detailers in the '+zip.slice(0,3)+'xx area.';
+    zipForm.classList.add('has-zip'); document.getElementById('zipChange').hidden=false; document.getElementById('heroZip').classList.add('has-zip');
     openFor=null; updateCards(); render();
   }
   if(/^\d{5}$/.test(custZip.value)) findZip(custZip.value);
@@ -965,6 +1004,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
         preferredTime:v('preferredTime'),notes:v('notes'),status:'new'}}});
       log.push(Date.now()); try{ localStorage.setItem(RL,JSON.stringify(log)) }catch(e){}
       sent[d._id+'|'+cur]=v('phone'); openFor=null; render();
+      if(custLoc&&(v('address')!==GP.address||custLoc.zip!==GP.zip)) saveProfile(custLoc.zip,v('address')).catch(()=>{});
     }catch(x){ btn.disabled=false; btn.textContent=btnLabel(withFee(totalFor(d,form))); err.textContent='Your request didn’t go through. Check your connection and try again.' }
   });
 
@@ -978,6 +1018,65 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     custZip.value=zip; await findZip(zip); heroZipNote.textContent='';
     const t=document.getElementById('packages'); if(lenis) lenis.scrollTo(t,{offset:-60}); else t.scrollIntoView({behavior:'smooth'});
   });
+  /* saved address: member profile in Wix (only the member can read or change it) */
+  const addrBtn=document.getElementById('addrBtn'), addrBtnText=document.getElementById('addrBtnText'), addrDlg=document.getElementById('addrDlg');
+  const addrZip=document.getElementById('addrZip'), addrStreet=document.getElementById('addrStreet'), addrErr=document.getElementById('addrErr'), addrSave=document.getElementById('addrSave');
+  function isMember(){ try{ const t=JSON.parse(localStorage.getItem(TK)||'null'); return !!(t&&t.role==='member') }catch(e){ return false } }
+  function paintAddr(){
+    addrBtnText.textContent=GP.zip||'Address';
+    addrBtn.setAttribute('aria-label',GP.zip?'Your address: '+(GP.address?GP.address+', ':'')+GP.zip+'. Change it':'Set your address');
+  }
+  async function wixReq(method,path,body){
+    const r=await fetch(WIX+path,{method,headers:{'Content-Type':'application/json',Authorization:await wixToken()},body:JSON.stringify(body)});
+    const d=await r.json().catch(()=>null);
+    if(!r.ok) throw new Error((d&&d.message)||('Request failed ('+r.status+').'));
+    return d;
+  }
+  function keepLocal(){ try{ localStorage.setItem(ZK,GP.zip); localStorage.setItem(AK,GP.address) }catch(e){} }
+  async function saveProfile(zip,address){
+    GP.zip=zip; GP.address=address||''; keepLocal(); paintAddr();
+    if(!isMember()) return;
+    const data={zip:GP.zip,address:GP.address};
+    if(GP.id){ await wixReq('PUT','/wix-data/v2/items/'+GP.id,{dataCollectionId:'MemberProfiles',dataItem:{id:GP.id,data}}); return }
+    const d=await wixPost('/wix-data/v2/items',{dataCollectionId:'MemberProfiles',dataItem:{data}});
+    GP.id=d&&d.dataItem&&(d.dataItem.id||d.dataItem._id)||null;
+  }
+  function useZip(zip){ custZip.value=zip; heroZipInput.value=zip; findZip(zip) }
+  async function loadProfile(){
+    if(!isMember()) return;
+    try{
+      const d=await wixPost('/wix-data/v2/items/query',{dataCollectionId:'MemberProfiles',query:{sort:[{fieldName:'_updatedDate',order:'DESC'}],paging:{limit:1}}});
+      const it=d&&d.dataItems&&d.dataItems[0];
+      if(it&&it.data&&/^\d{5}$/.test(it.data.zip||'')){
+        GP.id=it.id||it.data._id; const changed=it.data.zip!==GP.zip;
+        GP.zip=it.data.zip; GP.address=it.data.address||''; keepLocal(); paintAddr();
+        if(changed||!custLoc) useZip(GP.zip);
+      } else if(/^\d{5}$/.test(GP.zip)) saveProfile(GP.zip,GP.address).catch(()=>{});
+    }catch(e){}
+  }
+  function openAddr(){
+    addrZip.value=GP.zip||custZip.value||''; addrStreet.value=GP.address||''; addrErr.textContent='';
+    if(lenis) lenis.stop();
+    if(addrDlg.showModal) addrDlg.showModal(); else addrDlg.setAttribute('open','');
+    setTimeout(()=>addrZip.focus(),30);
+  }
+  function closeAddr(){ if(addrDlg.close) addrDlg.close(); else addrDlg.removeAttribute('open') }
+  addrDlg.addEventListener('close',()=>{ if(lenis&&!document.body.classList.contains('drawer-open')) lenis.start() });
+  addrBtn.addEventListener('click',openAddr);
+  document.getElementById('zipChange').addEventListener('click',openAddr);
+  document.getElementById('addrCancel').addEventListener('click',closeAddr);
+  document.getElementById('addrForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const zip=addrZip.value.trim(), street=addrStreet.value.trim();
+    if(!/^\d{5}$/.test(zip)){ addrErr.textContent='Enter a 5-digit ZIP code.'; addrZip.focus(); return }
+    if(/(https?:\/\/|www\.)/i.test(street)){ addrErr.textContent='Please remove links from your address.'; addrStreet.focus(); return }
+    addrSave.disabled=true; addrSave.textContent='Saving…'; addrErr.textContent='';
+    try{ await saveProfile(zip,street); useZip(zip); render(); closeAddr() }
+    catch(x){ addrErr.textContent='We couldn’t save your address. Check your connection and try again.' }
+    finally{ addrSave.disabled=false; addrSave.textContent='Save' }
+  });
+  paintAddr(); loadProfile();
+
   const mBar=document.getElementById('mBar'), pkgSec=document.getElementById('packages'), heroSec=document.getElementById('top');
   function barCheck(){ const r=pkgSec.getBoundingClientRect(), inPk=r.top<innerHeight*0.5&&r.bottom>innerHeight*0.5; mBar.classList.toggle('show',(window.scrollY||0)>heroSec.offsetHeight*0.7&&!inPk) }
   addEventListener('scroll',barCheck,{passive:true}); if(lenis) lenis.on('scroll',barCheck); barCheck();
