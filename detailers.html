@@ -142,6 +142,22 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 .addon-add .money{display:block}
 .addon-btn{grid-column:1/-1;justify-self:start;min-height:48px;padding:0 22px;border-radius:9999px;border:1px solid var(--line-strong);background:var(--surface-2);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;cursor:pointer;transition:border-color 200ms ease-out}
 .addon-btn:hover{border-color:var(--foreground)}
+/* photos of your work */
+.ph-pick{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:128px;padding:20px;border:1px dashed var(--line-strong);border-radius:10px;background:var(--surface-2);text-align:center;cursor:pointer;transition:border-color 200ms ease-out}
+.ph-pick:hover,.ph-pick:focus-within{border-color:var(--foreground)}
+.ph-pick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.ph-pick b{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em}
+.ph-pick small{font-size:14px;color:var(--muted)}
+.ph-pick svg{width:28px;height:28px}
+.ph-pick[hidden]{display:none}
+.ph-grid{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,104px),1fr));gap:10px}
+.ph-grid:empty{display:none}
+.ph-grid li{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line)}
+.ph-grid img{width:100%;height:100%;object-fit:cover;display:block}
+.ph-grid .ph-state{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:6px;text-align:center;font-size:12px;font-weight:600;background:rgba(0,0,0,0.55);color:#fff}
+.ph-grid .ph-state.bad{background:rgba(160,20,20,0.75)}
+.ph-grid .ph-x{position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:9999px;border:0;background:rgba(0,0,0,0.7);color:#fff;font-size:18px;line-height:1;cursor:pointer}
+.ph-grid .ph-x:focus-visible{outline:2px solid #fff;outline-offset:1px}
 .addon-list{list-style:none;border-top:1px solid var(--line)}
 .addon-list:empty{display:none}
 .addon-list li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;padding-block:12px;border-bottom:1px solid var(--line)}
@@ -240,6 +256,13 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
           </div>
           <p class="hint" id="addonHint" aria-live="polite"></p>
           <ul class="addon-list" id="addonList" aria-label="Add-ons you offer"></ul>
+        </fieldset>
+
+        <fieldset>
+          <legend>Photos of your work</legend>
+          <p class="hint">Show us cars you’ve detailed: before-and-afters, interiors, paint, wheels. Add 1 to 8 photos. Gleam uses them to review your application.</p>
+          <label class="ph-pick" id="phPick" for="photos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg><b>Add photos</b><small id="phCount">JPG or PNG, from your phone or computer</small><input type="file" id="photos" accept="image/*" multiple></label>
+          <ul class="ph-grid" id="phGrid" aria-label="Your photos" aria-live="polite"></ul>
         </fieldset>
 
         <label class="agree" for="agree"><input type="checkbox" id="agree" required><span>I confirm this information is accurate, I agree to Gleam’s <a href="/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>, and Gleam can contact me about my application.</span></label>
@@ -363,6 +386,9 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
     if(!offered.length&&!ADDONS.length) return fail('Tick at least one package, or add an add-on you offer.',$(PK[0][0]));
     for(const [,pr,label] of offered){ if(!(+$(pr).value>0)) return fail('Set your price for '+label+'.',$(pr)); if(+$(pr).value>5000) return fail('Check your price for '+label+'. It looks too high.',$(pr)) }
     if(ADDONS.some(a=>a.price>5000||LINK.test(a.name+' '+a.description))) return fail('Check your add-ons: prices up to $5,000 and no links.',$('addonName'));
+    if(!PHOTOS.length) return fail('Add at least one photo of your work.',$('photos'));
+    if(PHOTOS.some(p=>p.state==='up')) return fail('Wait for your photos to finish uploading.',$('photos'));
+    if(!PHOTOS.some(p=>p.url)) return fail('Your photos didn’t upload. Remove them and add them again.',$('photos'));
     if(!$('agree').checked) return fail('Tick the box to confirm your details.',$('agree'));
     err.textContent=''; return true;
   }
@@ -377,6 +403,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
       const data={name:$('name').value.trim(),email:$('email').value.trim(),phone:$('phone').value.trim(),about:$('about').value.trim(),
         address:$('address').value.trim(),zip:z,city:$('city').value.trim(),state:$('state').value.trim().toUpperCase(),radiusMiles:+$('radius').value,status:'pending'};
       PK.forEach(([cb,pr])=>{ if($(cb).checked) data[pr]=Math.round(+$(pr).value*100)/100 });
+      data.workPhotos=PHOTOS.filter(p=>p.url).map(p=>p.url);
       if(ADDONS.length){ data.addons=ADDONS.map(x=>({name:x.name,description:x.description||'',price:x.price})); data.addonsSummary=ADDONS.map(x=>x.name+' $'+x.price).join(' · '); data.priceAddons=Math.min(...ADDONS.map(x=>x.price)) }
       const r=await fetch(WIX+'/wix-data/v2/items',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await wixToken()},
         body:JSON.stringify({dataCollectionId:'DetailerApplications',dataItem:{data}})});
@@ -390,6 +417,54 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
       btn.disabled=false; btn.textContent='Submit application';
       err.textContent="Your application didn't go through. Check your connection and try again.";
     }
+  });
+  /* photos of your work: shrink on the device, upload to the site's Wix media, keep the image links */
+  const PHOTOS=[], MAXP=8, phGrid=$('phGrid');
+  function phPaint(){
+    if(!PHOTOS.some(p=>p.state==='up')&&/photos to finish|didn’t upload/.test(err.textContent)) err.textContent='';
+    phGrid.innerHTML=PHOTOS.map((p,i)=>'<li><img src="'+p.thumb+'" alt="Your photo '+(i+1)+'">'+
+      (p.state==='up'?'<span class="ph-state">Uploading…</span>':p.state==='bad'?'<span class="ph-state bad">Didn’t upload</span>':'')+
+      '<button type="button" class="ph-x" data-i="'+i+'" aria-label="Remove photo '+(i+1)+'">×</button></li>').join('');
+    $('phPick').hidden=PHOTOS.length>=MAXP;
+    $('phCount').textContent=PHOTOS.length?PHOTOS.length+' of '+MAXP+' added. Add more, or remove one with ×.':'JPG or PNG, from your phone or computer';
+  }
+  async function shrink(file){
+    try{
+      const bmp=await createImageBitmap(file); const k=Math.min(1,2000/Math.max(bmp.width,bmp.height));
+      const c=document.createElement('canvas'); c.width=Math.round(bmp.width*k); c.height=Math.round(bmp.height*k);
+      c.getContext('2d').drawImage(bmp,0,0,c.width,c.height); bmp.close&&bmp.close();
+      const b=await new Promise(r=>c.toBlob(r,'image/jpeg',0.85)); if(b) return b;
+    }catch(e){}
+    return file;
+  }
+  async function upload(p){
+    const blob=await shrink(p.file); const type=blob.type||'image/jpeg';
+    const name=('work-'+Date.now()+'-'+Math.random().toString(36).slice(2,7))+(type==='image/png'?'.png':'.jpg');
+    const r=await fetch(WIX+'/form-submission-service/v4/submissions/media-upload-url',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await wixToken()},
+      body:JSON.stringify({formId:'00000000-0000-0000-0000-000000000000',filename:name,mimeType:type})});
+    if(!r.ok) throw new Error('url '+r.status);
+    const {uploadUrl}=await r.json();
+    const u=await fetch(uploadUrl+(uploadUrl.includes('?')?'&':'?')+'filename='+encodeURIComponent(name),{method:'PUT',headers:{'Content-Type':type},body:blob});
+    if(!u.ok) throw new Error('put '+u.status);
+    const d=await u.json(); const url=d&&d.file&&d.file.url;
+    if(!/^https:\/\/static\.wixstatic\.com\//.test(url||'')) throw new Error('no url');
+    return url;
+  }
+  $('photos').addEventListener('change',()=>{
+    const files=[...$('photos').files].filter(f=>/^image\//.test(f.type)||/\.(jpe?g|png|heic|heif|webp)$/i.test(f.name));
+    $('photos').value='';
+    const room=MAXP-PHOTOS.length; if(files.length>room) err.textContent='You can add up to '+MAXP+' photos. We added the first '+room+'.';
+    files.slice(0,room).forEach(file=>{
+      if(file.size>25*1024*1024){ err.textContent='One photo is over 25 MB. Pick a smaller one.'; return }
+      const p={file,thumb:URL.createObjectURL(file),state:'up',url:''}; PHOTOS.push(p);
+      upload(p).then(url=>{ p.url=url; p.state='ok' }).catch(()=>{ p.state='bad' }).finally(phPaint);
+    });
+    phPaint();
+  });
+  phGrid.addEventListener('click',e=>{
+    const b=e.target.closest('.ph-x'); if(!b) return;
+    const [p]=PHOTOS.splice(+b.dataset.i,1); if(p) URL.revokeObjectURL(p.thumb);
+    phPaint(); $('photos').focus();
   });
   preview();
 })();
