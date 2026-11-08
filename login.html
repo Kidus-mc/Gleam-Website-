@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>/* one site: the Wix copy sends people to Gleam on Netlify */if(/wix-site-host\.com$/.test(location.hostname))location.replace('https://allgleam.netlify.app'+location.pathname+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>if(location.protocol==='http:'&&!/^(localhost|127\.)/.test(location.hostname))location.replace('https:'+location.href.slice(5))</script>
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Log in | Gleam</title>
 <meta name="description" content="Log in or create your Gleam account to track booking requests or your detailer application.">
-<link rel="canonical" href="https://headless-ophotsrwwna-rgdrj7gsng-140a.wix-site-host.com/login.html">
+<link rel="canonical" href="https://allgleam.netlify.app/login.html">
 <meta name="theme-color" content="#08080a">
 <script>try{var gm=localStorage.getItem('gleam-theme');if(gm==='light'||(gm==='auto'&&matchMedia('(prefers-color-scheme: light)').matches)){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name="theme-color"]').setAttribute('content','#ffffff')}}catch(e){}</script>
 <meta name="robots" content="noindex">
@@ -20,7 +21,7 @@
 <meta property="og:site_name" content="Gleam">
 <meta property="og:title" content="Log in | Gleam">
 <meta property="og:description" content="Log in or create your Gleam account to track booking requests or your detailer application.">
-<meta property="og:url" content="https://headless-ophotsrwwna-rgdrj7gsng-140a.wix-site-host.com/login.html">
+<meta property="og:url" content="https://allgleam.netlify.app/login.html">
 <meta property="og:image" content="https://static.wixstatic.com/media/cfa77e_8e07e20a4a114d3a9006a7e6703c3fdc~mv2.webp/v1/fill/w_1200,h_630,al_c,q_80/gleam-social.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -329,7 +330,11 @@ function render(){
   const s = getMemberState();
   $('authLoading').hidden = !s.loading;
   if (s.loading) { $('authPanel').hidden = true; $('signedIn').hidden = true; return; }
-  if (s.loggedIn && !busy && params.has('returnTo')) { location.replace(returnTo); return; }
+  if (s.loggedIn && !busy && params.has('returnTo')) {
+    // guard: never bounce between pages more than a few times
+    let n = []; try { n = JSON.parse(sessionStorage.getItem('gleam-bounce') || '[]').filter(t => Date.now() - t < 20000); n.push(Date.now()); sessionStorage.setItem('gleam-bounce', JSON.stringify(n)); } catch (x) {}
+    if (n.length <= 3) { location.replace(returnTo); return; }
+  }
   if (s.loggedIn && !busy) {
     $('authPanel').hidden = true; $('signedIn').hidden = false;
     const who = s.member && (s.member.loginEmail || s.member.displayName);

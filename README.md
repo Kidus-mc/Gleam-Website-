@@ -16,3 +16,13 @@ Plain static site (HTML, CSS, JS), no build step. Data, member login and booking
 
 - **Netlify:** connect this repo, leave the build command empty, publish directory `.` (already set in `netlify.toml`).
 - **Wix:** the same files are published to the Wix Headless site.
+
+## Server (Netlify)
+
+- `netlify/edge-functions/login-wall.js`: checks the member's login before the homepage, detailers page and account page are sent.
+- `netlify/functions/book.mjs`: saves booking requests and works out the price from the detailer's listing.
+- `netlify/functions/my-bookings.mjs`: returns only the logged-in member's own requests.
+- `netlify/functions/upload-url.mjs`: one-time photo upload links for logged-in detailers.
+- `netlify/functions/health.mjs`: says whether the server is set up.
+
+Needs one Netlify environment variable: `WIX_CLIENT_SECRET` (Wix → Settings → Headless Settings → client → Generate Client Secret). Never put it in the code.

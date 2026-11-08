@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>/* one site: the Wix copy sends people to Gleam on Netlify */if(/wix-site-host\.com$/.test(location.hostname))location.replace('https://allgleam.netlify.app'+location.pathname+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* login wall: members only */(function(){try{var t=JSON.parse(localStorage.getItem('wix-visitor-ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b')||'null');if(t&&t.role==='member'&&t.refreshToken)return}catch(e){}document.documentElement.style.visibility='hidden';location.replace('/login.html?returnTo='+encodeURIComponent(location.pathname+location.search+location.hash))})()</script>
 <script>if(location.protocol==='http:'&&!/^(localhost|127\.)/.test(location.hostname))location.replace('https:'+location.href.slice(5))</script>
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Become a Detailer on Gleam | Set Your Own Prices</title>
 <meta name="description" content="Join Gleam as a detailer. Set your own prices, choose how far you travel, and get booked by customers near you.">
-<link rel="canonical" href="https://headless-ophotsrwwna-rgdrj7gsng-140a.wix-site-host.com/detailers.html">
+<link rel="canonical" href="https://allgleam.netlify.app/detailers.html">
 <meta name="theme-color" content="#08080a">
 <script>try{var gm=localStorage.getItem('gleam-theme');if(gm==='light'||(gm==='auto'&&matchMedia('(prefers-color-scheme: light)').matches)){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name="theme-color"]').setAttribute('content','#ffffff')}}catch(e){}</script>
 <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -20,7 +21,7 @@
 <meta property="og:site_name" content="Gleam">
 <meta property="og:title" content="Detail with Gleam. Set your own prices.">
 <meta property="og:description" content="Join Gleam as a detailer. Set your own prices, choose how far you travel, and get booked by customers near you.">
-<meta property="og:url" content="https://headless-ophotsrwwna-rgdrj7gsng-140a.wix-site-host.com/detailers.html">
+<meta property="og:url" content="https://allgleam.netlify.app/detailers.html">
 <meta property="og:image" content="https://static.wixstatic.com/media/cfa77e_8e07e20a4a114d3a9006a7e6703c3fdc~mv2.webp/v1/fill/w_1200,h_630,al_c,q_80/gleam-social.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -303,6 +304,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
     if(!r.ok) throw new Error('auth');
     const d=await r.json(); const t={accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:role||'visitor'};
     try{localStorage.setItem(TK,JSON.stringify(t))}catch(e){}
+    (function(t){try{if(t&&t.role==='member'&&t.accessToken){document.cookie='gleam_at='+encodeURIComponent(t.accessToken)+';path=/;max-age='+Math.max(0,Math.floor((t.expiresAt-Date.now())/1000))+';secure;samesite=lax'}else{document.cookie='gleam_at=;path=/;max-age=0;secure;samesite=lax'}}catch(e){}})(t);
     return t.accessToken;
   }
   async function wixToken(){
@@ -440,8 +442,8 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
   async function upload(p){
     const blob=await shrink(p.file); const type=blob.type||'image/jpeg';
     const name=('work-'+Date.now()+'-'+Math.random().toString(36).slice(2,7))+(type==='image/png'?'.png':'.jpg');
-    const r=await fetch(WIX+'/form-submission-service/v4/submissions/media-upload-url',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await wixToken()},
-      body:JSON.stringify({formId:'00000000-0000-0000-0000-000000000000',filename:name,mimeType:type})});
+    // Gleam's server checks the login and hands out a one-time upload link into the "Detailer applications" folder.
+    const r=await fetch('/api/upload-url',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await wixToken()},body:JSON.stringify({mimeType:type,sizeInBytes:blob.size})});
     if(!r.ok) throw new Error('url '+r.status);
     const {uploadUrl}=await r.json();
     const u=await fetch(uploadUrl+(uploadUrl.includes('?')?'&':'?')+'filename='+encodeURIComponent(name),{method:'PUT',headers:{'Content-Type':type},body:blob});

@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>/* one site: the Wix copy sends people to Gleam on Netlify */if(/wix-site-host\.com$/.test(location.hostname))location.replace('https://allgleam.netlify.app'+location.pathname+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* login wall: members only */(function(){try{var t=JSON.parse(localStorage.getItem('wix-visitor-ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b')||'null');if(t&&t.role==='member'&&t.refreshToken)return}catch(e){}document.documentElement.style.visibility='hidden';location.replace('/login.html?returnTo='+encodeURIComponent(location.pathname+location.search+location.hash))})()</script>
 <script>if(location.protocol==='http:'&&!/^(localhost|127\.)/.test(location.hostname))location.replace('https:'+location.href.slice(5))</script>
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Gleam | Mobile Car Detailing That Comes to You</title>
 <meta name="description" content="Book a pro car detail at your home, office or curb. Compare local detailers and their prices, pick one, and book in about a minute.">
-<link rel="canonical" href="https://headless-ophotsrwwna-rgdrj7gsng-140a.wix-site-host.com/">
+<link rel="canonical" href="https://allgleam.netlify.app/">
 <meta name="theme-color" content="#08080a">
 <script>try{var gm=localStorage.getItem('gleam-theme');if(gm==='light'||(gm==='auto'&&matchMedia('(prefers-color-scheme: light)').matches)){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name="theme-color"]').setAttribute('content','#ffffff')}}catch(e){}</script>
 <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -20,7 +21,7 @@
 <meta property="og:site_name" content="Gleam">
 <meta property="og:title" content="Gleam | Car detailing that comes to you">
 <meta property="og:description" content="Book a pro car detail at your home, office or curb. Compare local detailers and their prices, pick one, and book in about a minute.">
-<meta property="og:url" content="https://headless-ophotsrwwna-rgdrj7gsng-140a.wix-site-host.com/">
+<meta property="og:url" content="https://allgleam.netlify.app/">
 <meta property="og:image" content="https://static.wixstatic.com/media/cfa77e_8e07e20a4a114d3a9006a7e6703c3fdc~mv2.webp/v1/fill/w_1200,h_630,al_c,q_80/gleam-social.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -30,7 +31,7 @@
 <meta name="twitter:description" content="Book a pro car detail at your home, office or curb. Compare local detailers and their prices, pick one, and book in about a minute.">
 <meta name="twitter:image" content="https://static.wixstatic.com/media/cfa77e_8e07e20a4a114d3a9006a7e6703c3fdc~mv2.webp/v1/fill/w_1200,h_630,al_c,q_80/gleam-social.jpg">
 <link rel="preconnect" href="https://static.wixstatic.com">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "Gleam Car Detailing", "url": "https://headless-ophotsrwwna-rgdrj7gsng-140a.wix-site-host.com/", "logo": "https://static.wixstatic.com/media/cfa77e_d670180bce1a40e8b9c579a002f0f7df~mv2.png/v1/fit/w_480,h_212,q_80/logo.webp", "description": "Mobile car detailing marketplace: independent detailers who come to you, each setting their own price.", "sameAs": ["https://www.instagram.com/gleamcardetailing/", "https://www.tiktok.com/@gleam.car.detailing"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "Gleam Car Detailing", "url": "https://allgleam.netlify.app/", "logo": "https://static.wixstatic.com/media/cfa77e_d670180bce1a40e8b9c579a002f0f7df~mv2.png/v1/fit/w_480,h_212,q_80/logo.webp", "description": "Mobile car detailing marketplace: independent detailers who come to you, each setting their own price.", "sameAs": ["https://www.instagram.com/gleamcardetailing/", "https://www.tiktok.com/@gleam.car.detailing"]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
@@ -806,6 +807,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     if(!r.ok) throw new Error('Could not connect ('+r.status+').');
     const d=await r.json(); const t={accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:role||'visitor'};
     try{localStorage.setItem(TK,JSON.stringify(t))}catch(e){}
+    (function(t){try{if(t&&t.role==='member'&&t.accessToken){document.cookie='gleam_at='+encodeURIComponent(t.accessToken)+';path=/;max-age='+Math.max(0,Math.floor((t.expiresAt-Date.now())/1000))+';secure;samesite=lax'}else{document.cookie='gleam_at=;path=/;max-age=0;secure;samesite=lax'}}catch(e){}})(t);
     return t.accessToken;
   }
   async function wixToken(){
@@ -998,10 +1000,15 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     if(cur==='addons'&&!picked.length){ err.textContent='Pick at least one add-on.'; return }
     btn.disabled=true; btn.textContent='Sending…'; err.textContent='';
     try{
-      await wixPost('/wix-data/v2/items',{dataCollectionId:'BookingRequests',dataItem:{data:{
-        customerName:v('customerName'),phone:v('phone'),email:v('email'),address:v('address'),zip:custLoc?custLoc.zip:'',
-        package:PKG[cur],detailerId:d._id,detailerName:d.name,price:cur==='addons'?0:priceOf(d,cur),addons:picked.map(a=>a.name+' '+fmt(a.price)).join(' · '),subtotal:totalFor(d,form),serviceFee:feeOf(totalFor(d,form)),total:withFee(totalFor(d,form)),
-        preferredTime:v('preferredTime'),notes:v('notes'),status:'new'}}});
+      // Gleam's server works out the real price from the detailer's listing and saves the request.
+      const r=await fetch('/api/book',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await wixToken()},body:JSON.stringify({
+        package:cur,detailerId:d._id,addons:[...form.querySelectorAll('input[name=addon]:checked')].map(i=>+i.value),
+        customerName:v('customerName'),phone:v('phone'),email:v('email'),address:v('address'),zip:custLoc?custLoc.zip:'',preferredTime:v('preferredTime'),notes:v('notes')})});
+      if(!r.ok){
+        if(r.status===429){ btn.disabled=false; btn.textContent=btnLabel(withFee(totalFor(d,form))); return bad('You’ve sent several requests in the last hour. Your detailers will be in touch soon.') }
+        if(r.status===401){ location.assign('/login.html?returnTo=/'); return }
+        throw new Error('book '+r.status);
+      }
       log.push(Date.now()); try{ localStorage.setItem(RL,JSON.stringify(log)) }catch(e){}
       sent[d._id+'|'+cur]=v('phone'); openFor=null; render();
       if(custLoc&&(v('address')!==GP.address||custLoc.zip!==GP.zip)) saveProfile(custLoc.zip,v('address')).catch(()=>{});

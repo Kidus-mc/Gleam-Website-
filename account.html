@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>/* one site: the Wix copy sends people to Gleam on Netlify */if(/wix-site-host\.com$/.test(location.hostname))location.replace('https://allgleam.netlify.app'+location.pathname+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>if(location.protocol==='http:'&&!/^(localhost|127\.)/.test(location.hostname))location.replace('https:'+location.href.slice(5))</script>
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>My account | Gleam</title>
 <meta name="description" content="Your Gleam booking requests and detailer application.">
-<link rel="canonical" href="https://headless-ophotsrwwna-rgdrj7gsng-140a.wix-site-host.com/account.html">
+<link rel="canonical" href="https://allgleam.netlify.app/account.html">
 <meta name="theme-color" content="#08080a">
 <script>try{var gm=localStorage.getItem('gleam-theme');if(gm==='light'||(gm==='auto'&&matchMedia('(prefers-color-scheme: light)').matches)){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name="theme-color"]').setAttribute('content','#ffffff')}}catch(e){}</script>
 <meta name="robots" content="noindex">
@@ -20,7 +21,7 @@
 <meta property="og:site_name" content="Gleam">
 <meta property="og:title" content="My account | Gleam">
 <meta property="og:description" content="Your Gleam booking requests and detailer application.">
-<meta property="og:url" content="https://headless-ophotsrwwna-rgdrj7gsng-140a.wix-site-host.com/account.html">
+<meta property="og:url" content="https://allgleam.netlify.app/account.html">
 <meta property="og:image" content="https://static.wixstatic.com/media/cfa77e_8e07e20a4a114d3a9006a7e6703c3fdc~mv2.webp/v1/fill/w_1200,h_630,al_c,q_80/gleam-social.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -149,6 +150,12 @@ const created = d => { const v = d && d._createdDate; const s = v && (v.$date ||
 const day = t => t ? t.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
 let loaded = false;
 
+// your own booking requests, checked by Gleam's server
+async function myBookings(){
+  const res = await wixRequest(location.origin + '/api/my-bookings', { method: 'GET' });
+  return (res && res.items) || [];
+}
+
 async function query(col){
   const res = await wixRequest('/wix-data/v2/items/query', { body: { dataCollectionId: col, query: { paging: { limit: 100 } } } });
   return (res && res.dataItems || []).map(x => Object.assign({ _id: x.id }, x.data || {}));
@@ -194,7 +201,7 @@ function renderDetailer(apps, live){
 
 async function loadData(){
   if (loaded) return; loaded = true;
-  const [b, d, l] = await Promise.allSettled([query('BookingRequests'), query('DetailerApplications'), query('Detailers')]);
+  const [b, d, l] = await Promise.allSettled([myBookings(), query('DetailerApplications'), query('Detailers')]);
   if (b.status === 'fulfilled') renderBookings(b.value); else $('bookings').innerHTML = '<p class="empty">We couldn’t load your requests right now. Refresh to try again.</p>';
   if (d.status === 'fulfilled') renderDetailer(d.value, l.status === 'fulfilled' ? l.value : []); else $('detailer').innerHTML = '<p class="empty">We couldn’t load your detailer details right now. Refresh to try again.</p>';
 }
