@@ -702,7 +702,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
         <button type="button" data-sort="dist" aria-pressed="false">Closest</button>
       </div>
       <ul class="d-list" id="dList"></ul>
-      <p class="drawer-foot">Every detailer sets their own price, and a 7% Gleam service fee is added to each booking. Sending a request doesn’t charge you; your detailer confirms the time with you first. <a href="detailers.html">Are you a detailer? Join Gleam</a></p>
+      <p class="drawer-foot">Every detailer sets their own price, and the price you see is the price you pay, with no Gleam service fee. Sending a request doesn’t charge you; your detailer confirms the time with you first. <a href="detailers.html">Are you a detailer? Join Gleam</a></p>
     </div>
   </aside>
 </div>
@@ -851,10 +851,9 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   const fmt=v=>'$'+(Math.round(v*100)%100?v.toFixed(2):Math.round(v));
   const adds=d=>Array.isArray(d.addons)?d.addons.filter(a=>a&&a.name&&+a.price>0).map(a=>({name:String(a.name),price:+a.price,description:a.description?String(a.description):''})):[];
   const priceOf=(d,k)=>{ if(k==='addons'){ const A=adds(d); if(A.length) return Math.min(...A.map(a=>a.price)) } const v=d[PRICE_KEY[k]]; return typeof v==='number'&&v>0?v:null};
-  const FEE_RATE=0.07;
-  const feeOf=s=>Math.round(s*FEE_RATE*100)/100;
-  const withFee=s=>Math.round((s+feeOf(s))*100)/100;
-  const sumHTML=s=>s>0?'<span>Detail '+fmt(s)+'</span><span>Service fee (7%) '+fmt(feeOf(s))+'</span><b>Total '+fmt(withFee(s))+'</b>':'';
+  // no Gleam service fee: the total is the detailer's price
+  const withFee=s=>Math.round(s*100)/100;
+  const sumHTML=s=>s>0?'<b>Total '+fmt(withFee(s))+'</b>':'';
   const btnLabel=t=>t>0?'Send request for '+fmt(t):'Send request';
   const pickedAdds=(d,form)=>[...form.querySelectorAll('input[name=addon]:checked')].map(i=>adds(d)[+i.value]).filter(Boolean);
   const totalFor=(d,form)=>(cur==='addons'?0:(priceOf(d,cur)||0))+pickedAdds(d,form).reduce((s,a)=>s+a.price,0);
@@ -959,7 +958,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
       return '<li class="d-item'+(sent[d._id+'|'+cur]?' picked':'')+'" style="--d:'+(i*70)+'ms">'+
         '<span class="d-avatar" aria-hidden="true">'+esc(initials(d.name))+'</span>'+
         '<div><p class="d-name">'+esc(d.name)+'</p><p class="label d-sub">'+sub+'</p>'+'<p class="d-modes">'+(offersMobile(d)?'<span>Comes to you</span>':'')+(offersShop(d)?'<span>Shop'+(d.shopCity?' in '+esc(d.shopCity):'')+'</span>':'')+'</p>'+(d.about?'<p class="d-tag">'+esc(d.about)+'</p>':'')+(adds(d).length?'<p class="d-adds">+ '+adds(d).map(a=>esc(a.name)+' '+fmt(a.price)).join(' · ')+'</p>':'')+'</div>'+
-        '<div class="d-price"><b>'+fmt(p)+'</b><span class="label">'+(cur==='addons'?'Starting price':PKG[cur])+' + 7% fee</span></div>'+
+        '<div class="d-price"><b>'+fmt(p)+'</b><span class="label">'+(cur==='addons'?'Starting price':PKG[cur])+'</span></div>'+
         '<div class="d-actions">'+act+'</div></li>';
     }).join('');
     requestAnimationFrame(()=>requestAnimationFrame(()=>drawer.classList.add('listed')));

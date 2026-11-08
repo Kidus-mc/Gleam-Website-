@@ -4,7 +4,7 @@ import { handle, memberFrom, sameOrigin, wixAdmin, json, clip, LINK } from '../l
 
 const PRICE_KEY = { exterior: 'priceExterior', interior: 'priceInterior', full: 'priceFull' };
 const NAMES = { exterior: 'Exterior', interior: 'Interior', full: 'Full Detail', addons: 'Add-ons' };
-const FEE_RATE = 0.07;
+const FEE_RATE = 0; // no Gleam service fee
 const r2 = x => Math.round(x * 100) / 100;
 const money = v => '$' + (Math.round(v * 100) % 100 ? v.toFixed(2) : Math.round(v));
 const MAX_PER_HOUR = 5;
