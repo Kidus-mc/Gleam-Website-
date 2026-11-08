@@ -161,6 +161,12 @@ async function query(col){
   return (res && res.dataItems || []).map(x => Object.assign({ _id: x.id }, x.data || {}));
 }
 
+// directions open in Apple Maps on Apple devices, Google Maps everywhere else
+function dirUrl(b){
+  const q = encodeURIComponent([b.shopName, b.shopAddress].filter(Boolean).join(', '));
+  return /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) ? 'https://maps.apple.com/?q=' + q : 'https://www.google.com/maps/search/?api=1&query=' + q;
+}
+
 function renderBookings(list){
   const box = $('bookings');
   if (!list.length) {
@@ -174,7 +180,8 @@ function renderBookings(list){
     const bits = [b.detailerName ? 'with ' + esc(b.detailerName) : '', b.preferredTime ? esc(b.preferredTime) : '', day(created(b))].filter(Boolean).join(' · ');
     return '<li><span class="t">' + esc(b.package || 'Detail') + (b.addons ? ' + ' + esc(b.addons) : '') + '</span>' +
       '<span class="p">' + (typeof amount === 'number' && amount > 0 ? money(amount) : '') + '</span>' +
-      '<span class="s">' + bits + '</span><span class="s">' + esc(status) + '</span></li>';
+      '<span class="s">' + bits + '</span><span class="s">' + esc(status) + '</span>' +
+      (b.serviceType === 'shop' && b.shopAddress ? '<span class="s">At the shop: ' + esc([b.shopName, b.shopAddress].filter(Boolean).join(', ')) + ' · <a href="' + dirUrl(b) + '" target="_blank" rel="noopener">Directions</a></span>' : '') + '</li>';
   }).join('') + '</ul>';
 }
 

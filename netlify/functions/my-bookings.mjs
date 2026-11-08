@@ -11,7 +11,8 @@ export default handle(async req => {
   const items = (res.dataItems || []).map(x => {
     const v = x.data || {};
     return { _id: x.id, _createdDate: v._createdDate, detailerName: v.detailerName, package: v.package, addons: v.addons,
-      preferredTime: v.preferredTime, status: v.status, total: v.total, price: v.price };
+      preferredTime: v.preferredTime, status: v.status, total: v.total, price: v.price,
+      serviceType: v.serviceType || 'mobile', shopName: v.shopName || '', shopAddress: v.shopAddress || '' };
   });
   return json(200, { items });
 });

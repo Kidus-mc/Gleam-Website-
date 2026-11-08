@@ -21,11 +21,12 @@ export default handle(async req => {
   if (!/^[A-Za-z0-9-]{8,64}$/.test(detailerId)) return json(400, { error: 'detailer' });
   const customerName = clip(b.customerName, 80), phone = clip(b.phone, 30), email = clip(b.email, 120);
   const address = clip(b.address, 150), zip = clip(b.zip, 5), preferredTime = clip(b.preferredTime, 80), notes = clip(b.notes, 500);
+  const serviceType = b.serviceType === 'shop' ? 'shop' : 'mobile';
   const digits = phone.replace(/\D/g, '');
   if (customerName.length < 2 || LINK.test(customerName)) return json(400, { error: 'name' });
   if (digits.length < 10 || digits.length > 15) return json(400, { error: 'phone' });
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return json(400, { error: 'email' });
-  if (address.length < 6 || LINK.test(address)) return json(400, { error: 'address' });
+  if (serviceType === 'mobile' && (address.length < 6 || LINK.test(address))) return json(400, { error: 'address' });
   if (zip && !/^\d{5}$/.test(zip)) return json(400, { error: 'zip' });
   if (LINK.test(notes) || LINK.test(preferredTime)) return json(400, { error: 'links' });
 
@@ -33,6 +34,13 @@ export default handle(async req => {
   let d;
   try { d = (await wixAdmin('/wix-data/v2/items/' + encodeURIComponent(detailerId) + '?dataCollectionId=Detailers', undefined, 'GET')).dataItem.data; }
   catch (e) { if (e.status === 404) return json(400, { error: 'detailer' }); throw e; }
+  // Mobile (detailer drives to the customer) and/or a shop the customer visits.
+  const offersMobile = d.serviceShop ? !!d.serviceMobile : true;
+  const offersShop = !!(d.serviceShop && d.shopAddress);
+  if (serviceType === 'mobile' && !offersMobile) return json(400, { error: 'not_mobile' });
+  if (serviceType === 'shop' && !offersShop) return json(400, { error: 'not_shop' });
+  const shopAddress = offersShop ? [d.shopAddress, [d.shopCity, d.shopState].filter(Boolean).join(', '), d.shopZip].filter(Boolean).join(', ') : '';
+
   const adds = (Array.isArray(d.addons) ? d.addons : []).filter(a => a && a.name && +a.price > 0);
   const idx = [...new Set((Array.isArray(b.addons) ? b.addons : []).map(Number))].filter(i => Number.isInteger(i) && i >= 0 && i < adds.length);
   const picked = idx.map(i => adds[i]);
@@ -49,7 +57,8 @@ export default handle(async req => {
   if ((recent.dataItems || []).length >= MAX_PER_HOUR) return json(429, { error: 'too_many' });
 
   await wixAdmin('/wix-data/v2/items', { dataCollectionId: 'BookingRequests', dataItem: { data: {
-    customerName, phone, email, address, zip, preferredTime, notes,
+    customerName, phone, email, address: serviceType === 'mobile' ? address : '', zip, preferredTime, notes,
+    serviceType, ...(serviceType === 'shop' ? { shopName: String(d.shopName || ''), shopAddress } : {}),
     package: NAMES[pkg], detailerId, detailerName: String(d.name || ''),
     price: base, addons: picked.map(a => a.name + ' ' + money(+a.price)).join(' · '),
     subtotal, serviceFee, total, status: 'new', memberId: member.id, memberEmail: member.email, checkedBy: 'server',

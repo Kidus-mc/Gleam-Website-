@@ -143,6 +143,15 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 .addon-add .money{display:block}
 .addon-btn{grid-column:1/-1;justify-self:start;min-height:48px;padding:0 22px;border-radius:9999px;border:1px solid var(--line-strong);background:var(--surface-2);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;cursor:pointer;transition:border-color 200ms ease-out}
 .addon-btn:hover{border-color:var(--foreground)}
+/* how you work: mobile / shop */
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr));gap:12px}
+.mode{display:flex;gap:12px;align-items:flex-start;padding:16px;border:1px solid var(--line-strong);border-radius:8px;cursor:pointer;background:var(--background)}
+.mode:has(input:checked){border-color:var(--accent)}
+.mode input{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--accent)}
+.mode b{display:block;font-weight:600;font-size:17px;line-height:1.25}
+.mode small{display:block;margin-top:4px;color:var(--muted);font-size:14px;line-height:1.4}
+.shop-box{display:flex;flex-direction:column;gap:16px;padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--background)}
+.shop-box[hidden],.radius-wrap[hidden]{display:none}
 /* photos of your work */
 .ph-pick{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:128px;padding:20px;border:1px dashed var(--line-strong);border-radius:10px;background:var(--surface-2);text-align:center;cursor:pointer;transition:border-color 200ms ease-out}
 .ph-pick:hover,.ph-pick:focus-within{border-color:var(--foreground)}
@@ -215,11 +224,31 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
         </fieldset>
 
         <fieldset>
+          <legend>How you work</legend>
+          <p class="hint">Pick one or both.</p>
+          <div class="modes">
+            <label class="mode" for="modeMobile"><input type="checkbox" id="modeMobile" checked><span><b>Mobile</b><small>I drive to the customer’s home or work.</small></span></label>
+            <label class="mode" for="modeShop"><input type="checkbox" id="modeShop"><span><b>Shop or car wash</b><small>Customers bring their car to my location.</small></span></label>
+          </div>
+          <div class="shop-box" id="shopBox" hidden>
+            <p class="hint">Your shop address is shown to customers, with a map after they book, so they can find you.</p>
+            <label class="f" for="shopName"><span>Shop or car wash name <em>(optional)</em></span><input type="text" id="shopName" maxlength="80" placeholder="e.g. Sparkle Car Wash"></label>
+            <label class="f" for="shopAddress"><span>Shop street address</span><input type="text" id="shopAddress" autocomplete="off" maxlength="120" placeholder="e.g. 4512 Main St"></label>
+            <div class="row">
+              <label class="f" for="shopZip"><span>Shop ZIP code</span><input type="text" id="shopZip" inputmode="numeric" maxlength="5" placeholder="e.g. 75115"></label>
+              <label class="f" for="shopCity"><span>City</span><input type="text" id="shopCity" maxlength="60"></label>
+              <label class="f" for="shopState"><span>State</span><input type="text" id="shopState" maxlength="2" placeholder="e.g. TX"></label>
+            </div>
+            <p class="hint" id="shopHint" aria-live="polite">Enter the shop ZIP and we'll fill in the city.</p>
+          </div>
+        </fieldset>
+
+        <fieldset>
           <legend>Where you work</legend>
           <label class="f" for="address"><span>Street address</span><input type="text" id="address" name="address" autocomplete="street-address" required maxlength="120" placeholder="e.g. 120 Court St"></label>
           <div class="row">
             <label class="f" for="zip"><span>Your ZIP code</span><input type="text" id="zip" name="zip" inputmode="numeric" autocomplete="postal-code" maxlength="5" required placeholder="e.g. 11201"></label>
-            <label class="f" for="radius"><span>How far will you travel?</span>
+            <label class="f radius-wrap" id="radiusWrap" for="radius"><span>How far will you travel?</span>
               <select id="radius" name="radius">
                 <option value="5">Up to 5 miles</option>
                 <option value="10" selected>Up to 10 miles</option>
@@ -349,7 +378,8 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
   function preview(){
     const n=$('name').value.trim(), c=$('city').value.trim(), s=$('state').value.trim().toUpperCase(), a=$('about').value.trim();
     $('pvName').textContent=n||'Your name'; $('pvAv').textContent=initials(n);
-    $('pvSub').textContent=([c,s].filter(Boolean).join(', ')||'Your city')+' · up to '+$('radius').value+' mi';
+    const sc=$('shopCity').value.trim(), ss=$('shopState').value.trim().toUpperCase();
+    $('pvSub').textContent=[$('modeMobile').checked?([c,s].filter(Boolean).join(', ')||'Your city')+' · comes to you, up to '+$('radius').value+' mi':'', $('modeShop').checked?'Shop in '+([sc,ss].filter(Boolean).join(', ')||'your city'):''].filter(Boolean).join(' · ')||'Pick how you work';
     $('pvAbout').textContent=a; $('pvAbout').hidden=!a;
     $('pvAdds').textContent=ADDONS.length?'+ '+ADDONS.map(x=>x.name+' $'+x.price).join(' · '):''; $('pvAdds').hidden=!ADDONS.length;
     const first=PK.find(([cb,pr])=>$(cb).checked&&+$(pr).value>0);
@@ -382,6 +412,12 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
     if(LINK.test($('about').value)) return fail('Please remove links from your description.',$('about'));
     if($('address').value.trim().length<5) return fail('Add your street address.',$('address'));
     if(!/^\d{5}$/.test($('zip').value)) return fail('Add your 5-digit ZIP code.',$('zip'));
+    if(!$('modeMobile').checked&&!$('modeShop').checked) return fail('Pick how you work: mobile, a shop, or both.',$('modeMobile'));
+    if($('modeShop').checked){
+      if($('shopAddress').value.trim().length<5||LINK.test($('shopAddress').value+' '+$('shopName').value)) return fail('Add your shop’s street address so customers can find you.',$('shopAddress'));
+      if(!/^\d{5}$/.test($('shopZip').value)) return fail('Add your shop’s 5-digit ZIP code.',$('shopZip'));
+      if($('shopState').value.trim()&&!/^[A-Za-z]{2}$/.test($('shopState').value.trim())) return fail('Use the 2-letter state code for your shop, like TX.',$('shopState'));
+    }
     if($('state').value.trim()&&!/^[A-Za-z]{2}$/.test($('state').value.trim())) return fail('Use the 2-letter state code, like MD.',$('state'));
     if(($('addonName').value.trim()||$('addonPrice').value||$('addonDesc').value.trim())&&!addAddon(true)) return fail('Finish the add-on you started: give it a name and a price, or clear it.',$('addonName').value.trim()?$('addonPrice'):$('addonName'));
     const offered=PK.filter(([cb])=>$(cb).checked);
@@ -406,6 +442,8 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
         address:$('address').value.trim(),zip:z,city:$('city').value.trim(),state:$('state').value.trim().toUpperCase(),radiusMiles:+$('radius').value,status:'pending'};
       PK.forEach(([cb,pr])=>{ if($(cb).checked) data[pr]=Math.round(+$(pr).value*100)/100 });
       data.workPhotos=PHOTOS.filter(p=>p.url).map(p=>p.url);
+      data.serviceMobile=$('modeMobile').checked; data.serviceShop=$('modeShop').checked;
+      if(data.serviceShop){ data.shopName=$('shopName').value.trim(); data.shopAddress=$('shopAddress').value.trim(); data.shopZip=$('shopZip').value; data.shopCity=$('shopCity').value.trim(); data.shopState=$('shopState').value.trim().toUpperCase() }
       if(ADDONS.length){ data.addons=ADDONS.map(x=>({name:x.name,description:x.description||'',price:x.price})); data.addonsSummary=ADDONS.map(x=>x.name+' $'+x.price).join(' · '); data.priceAddons=Math.min(...ADDONS.map(x=>x.price)) }
       const r=await fetch(WIX+'/wix-data/v2/items',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await wixToken()},
         body:JSON.stringify({dataCollectionId:'DetailerApplications',dataItem:{data}})});
@@ -468,6 +506,18 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
     const [p]=PHOTOS.splice(+b.dataset.i,1); if(p) URL.revokeObjectURL(p.thumb);
     phPaint(); $('photos').focus();
   });
+  /* how you work: show the shop address only for shops, the travel distance only for mobile */
+  function modes(){ $('shopBox').hidden=!$('modeShop').checked; $('radiusWrap').hidden=!$('modeMobile').checked; preview() }
+  $('modeMobile').addEventListener('change',modes); $('modeShop').addEventListener('change',()=>{ modes(); if($('modeShop').checked) $('shopName').focus() });
+  $('shopZip').addEventListener('input',async()=>{
+    const z=$('shopZip').value.replace(/\D/g,'').slice(0,5); if(z!==$('shopZip').value) $('shopZip').value=z;
+    if(z.length!==5){ $('shopHint').textContent="Enter the shop ZIP and we'll fill in the city."; $('shopHint').classList.remove('ok'); return }
+    const info=await zipInfo(z); if($('shopZip').value!==z) return;
+    if(info){ $('shopCity').value=info.city; $('shopState').value=info.state; $('shopHint').textContent='Found '+info.city+', '+info.state+'.'; $('shopHint').classList.add('ok') }
+    else { $('shopHint').textContent="We couldn't find that ZIP. Check it, or type the city and state."; $('shopHint').classList.remove('ok') }
+    preview();
+  });
+  modes();
   preview();
 })();
 </script>

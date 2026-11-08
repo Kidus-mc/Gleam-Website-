@@ -358,6 +358,22 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
 .d-book:hover{background:var(--accent-2)}
 .d-item.picked{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 10%,transparent),transparent 70%)}
 .d-picked{font-size:0.9375rem;color:var(--foreground)}
+/* mobile vs shop, and the map after booking a shop visit */
+.d-modes{margin-top:0.375rem;display:flex;flex-wrap:wrap;gap:0.375rem}
+.d-modes span{display:inline-flex;align-items:center;min-height:1.625rem;padding:0 0.625rem;border:1px solid var(--line-strong);border-radius:9999px;font-size:0.8125rem;color:var(--muted)}
+.f-where{border:0;display:flex;flex-direction:column;gap:0.5rem;min-width:0}
+.f-where legend{margin-bottom:0.5rem}
+.f-shopnote{font-size:0.9375rem;color:var(--muted)}
+.f-addr[hidden]{display:none}
+.d-map{grid-column:1/-1;margin-top:0.75rem;display:flex;flex-direction:column;gap:0.625rem}
+.d-map-h{font-size:0.9375rem;font-weight:600}
+.d-map-box{position:relative;width:100%;aspect-ratio:16/10;border-radius:0.75rem;overflow:hidden;border:1px solid var(--line-strong);background:var(--surface-2)}
+.d-map-box iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.d-map-open{position:absolute;inset:0;z-index:1}
+.d-map-open:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:0.75rem}
+.d-map-links{display:flex;flex-wrap:wrap;gap:0.5rem}
+.d-map-links a{display:inline-flex;align-items:center;min-height:2.75rem;padding:0 1rem;border-radius:9999px;border:1px solid var(--line-strong);color:var(--foreground);font-size:0.8125rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;text-decoration:none}
+.d-map-links a:hover{border-color:var(--foreground)}
 .d-picked::before{content:"";display:inline-block;width:0.5rem;height:0.5rem;border-radius:9999px;background:var(--accent);margin-right:0.5rem;vertical-align:middle}
 .drawer-foot{margin-top:2rem;font-size:0.9375rem;color:var(--muted);max-width:46ch}
 @media (max-width:640px){.d-item{grid-template-columns:auto minmax(0,1fr)}.d-price{grid-column:1/-1;text-align:left;display:flex;align-items:baseline;gap:0.75rem}}
@@ -880,16 +896,31 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   const ZK='gleam-zip', AK='gleam-address';
   const GP={id:null,zip:'',address:''};
   try{ GP.zip=localStorage.getItem(ZK)||''; GP.address=localStorage.getItem(AK)||'' }catch(e){}
-  let cur=null, sortBy='price', openFor=null, sent={}, lastFocus=null;
+  let cur=null, sortBy='price', openFor=null, sent={}, sentWhere={}, lastFocus=null;
   try{ const z=localStorage.getItem(ZK); if(/^\d{5}$/.test(z||'')) custZip.value=z }catch(e){}
 
+  /* how each detailer works: mobile (drives to you), a shop customers visit, or both */
+  const SHOP_RANGE=25;
+  const offersMobile=d=>d.serviceShop?!!d.serviceMobile:true;
+  const offersShop=d=>!!(d.serviceShop&&d.shopAddress);
+  const shopLine=d=>[d.shopAddress,[d.shopCity,d.shopState].filter(Boolean).join(', '),d.shopZip].filter(Boolean).join(', ');
+  function distTo(zip){ const p=ZT&&ZT[String(zip||'')]; return custLoc&&custLoc.lat!=null&&p?miles(custLoc.lat,custLoc.lng,+p.latitude,+p.longitude):null }
   function covers(d){
     if(!custLoc) return {ok:true,dist:null};
-    const p=ZT&&ZT[String(d.zip||'')];
-    if(custLoc.lat!=null&&p){
-      const m=miles(custLoc.lat,custLoc.lng,+p.latitude,+p.longitude); return {ok:m<=((+d.radiusMiles)||10),dist:m};
-    }
-    return {ok:String(d.zip||'').slice(0,3)===custLoc.zip.slice(0,3),dist:null};
+    let ok=false, dist=null;
+    const near=(zip,range)=>{ const m=distTo(zip); if(m!=null){ if(m<=range){ ok=true; dist=dist==null?m:Math.min(dist,m) } } else if(String(zip||'').slice(0,3)===custLoc.zip.slice(0,3)) ok=true };
+    if(offersMobile(d)) near(d.zip,(+d.radiusMiles)||10);
+    if(offersShop(d)) near(d.shopZip,SHOP_RANGE);
+    return {ok,dist};
+  }
+  function mapBlock(d){
+    const q=encodeURIComponent([d.shopName,shopLine(d)].filter(Boolean).join(', '));
+    const apple='https://maps.apple.com/?q='+q, google='https://www.google.com/maps/search/?api=1&query='+q;
+    const onApple=/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+    return '<div class="d-map"><p class="d-map-h">Where to go: '+(d.shopName?esc(d.shopName)+', ':'')+esc(shopLine(d))+'</p>'+
+      '<div class="d-map-box"><iframe title="Map of '+esc(d.shopName||d.name+'’s shop')+'" src="https://maps.google.com/maps?q='+q+'&amp;z=15&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'+
+      '<a class="d-map-open" href="'+(onApple?apple:google)+'" target="_blank" rel="noopener" aria-label="Get directions in '+(onApple?'Apple':'Google')+' Maps"></a></div>'+
+      '<p class="d-map-links"><a href="'+apple+'" target="_blank" rel="noopener">Open in Apple Maps</a><a href="'+google+'" target="_blank" rel="noopener">Open in Google Maps</a></p></div>';
   }
   function empty(msg){ sortWrap.hidden=true; list.innerHTML='<li class="d-empty">'+msg+'</li>'; requestAnimationFrame(()=>drawer.classList.add('listed')) }
   function render(){
@@ -905,14 +936,15 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
       const d=r.d, id=esc(d._id), p=priceOf(d,cur), where=[d.city,d.state].filter(Boolean).map(esc).join(', ');
       const sub=[r.dist!=null?r.dist.toFixed(1)+' mi away':(custLoc?'Near you':''),where].filter(Boolean).join(' · ');
       let act;
-      if(sent[d._id+'|'+cur]) act='<p class="d-picked" role="status">Request sent. '+esc(firstName(d.name))+' or the Gleam team will contact you at '+esc(sent[d._id+'|'+cur])+' to confirm a time.</p>';
+      if(sent[d._id+'|'+cur]) act='<p class="d-picked" role="status">Request sent. '+esc(firstName(d.name))+' or the Gleam team will contact you at '+esc(sent[d._id+'|'+cur])+' to confirm a time.'+(sentWhere[d._id+'|'+cur]==='shop'?' You’ll bring your car to the shop below.':'')+'</p>'+(sentWhere[d._id+'|'+cur]==='shop'&&offersShop(d)?mapBlock(d):'');
       else if(openFor===d._id) act=
         '<form class="d-form" data-id="'+id+'" data-t="'+Date.now()+'" novalidate>'+
           '<div class="f-grid">'+
             '<label class="f"><span>Your name</span><input name="customerName" required autocomplete="name" maxlength="80"></label>'+
             '<label class="f"><span>Phone</span><input name="phone" type="tel" required autocomplete="tel" maxlength="20"></label>'+
             '<label class="f"><span>Email (optional)</span><input name="email" type="email" autocomplete="email" maxlength="120"></label>'+
-            '<label class="f f-wide"><span>Where’s the car? (street address)</span><input name="address" required autocomplete="street-address" maxlength="150" placeholder="e.g. 120 Court St, Brooklyn" value="'+esc(GP.address)+'"></label>'+
+            (offersMobile(d)&&offersShop(d)?'<fieldset class="f f-wide f-where"><legend>Where should the detail happen?</legend><label class="chk"><input type="radio" name="where" value="mobile" checked><span>Come to me</span></label><label class="chk"><input type="radio" name="where" value="shop"><span>I’ll bring my car to the shop<small>'+esc(shopLine(d))+'</small></span></label></fieldset>':'')+
+            (offersMobile(d)?'<label class="f f-wide f-addr"><span>Where’s the car? (street address)</span><input name="address" required autocomplete="street-address" maxlength="150" placeholder="e.g. 120 Court St, Brooklyn" value="'+esc(GP.address)+'"></label>':'<p class="f f-wide f-shopnote">You’ll bring your car to '+esc(d.shopName||'the shop')+': '+esc(shopLine(d))+'. You’ll get a map after you send the request.</p>')+
             '<label class="f"><span>When works for you?</span><input name="preferredTime" maxlength="80" placeholder="e.g. Saturday morning"></label>'+
             addonBox(d)+
             '<label class="f f-wide"><span>Notes (optional)</span><input name="notes" maxlength="300" placeholder="Car make and model, where it’s parked"></label>'+
@@ -926,7 +958,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
       else act='<button type="button" class="d-book" data-book="'+id+'">Book '+esc(firstName(d.name))+'</button>';
       return '<li class="d-item'+(sent[d._id+'|'+cur]?' picked':'')+'" style="--d:'+(i*70)+'ms">'+
         '<span class="d-avatar" aria-hidden="true">'+esc(initials(d.name))+'</span>'+
-        '<div><p class="d-name">'+esc(d.name)+'</p><p class="label d-sub">'+sub+'</p>'+(d.about?'<p class="d-tag">'+esc(d.about)+'</p>':'')+(adds(d).length?'<p class="d-adds">+ '+adds(d).map(a=>esc(a.name)+' '+fmt(a.price)).join(' · ')+'</p>':'')+'</div>'+
+        '<div><p class="d-name">'+esc(d.name)+'</p><p class="label d-sub">'+sub+'</p>'+'<p class="d-modes">'+(offersMobile(d)?'<span>Comes to you</span>':'')+(offersShop(d)?'<span>Shop'+(d.shopCity?' in '+esc(d.shopCity):'')+'</span>':'')+'</p>'+(d.about?'<p class="d-tag">'+esc(d.about)+'</p>':'')+(adds(d).length?'<p class="d-adds">+ '+adds(d).map(a=>esc(a.name)+' '+fmt(a.price)).join(' · ')+'</p>':'')+'</div>'+
         '<div class="d-price"><b>'+fmt(p)+'</b><span class="label">'+(cur==='addons'?'Starting price':PKG[cur])+' + 7% fee</span></div>'+
         '<div class="d-actions">'+act+'</div></li>';
     }).join('');
@@ -980,7 +1012,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     if(b){ openFor=b.dataset.book; render(); setTimeout(()=>{const i=list.querySelector('.d-form input'); if(i) i.focus({preventScroll:true})},60); return }
     if(e.target.closest('[data-cancel]')){ openFor=null; render() }
   });
-  list.addEventListener('change',e=>{ const form=e.target.closest('.d-form'); if(!form) return; const d=DETAILERS.find(x=>x._id===form.dataset.id); if(d){ const s=totalFor(d,form); form.querySelector('button[type=submit]').textContent=btnLabel(withFee(s)); const sm=form.querySelector('.f-sum'); if(sm) sm.innerHTML=sumHTML(s) } });
+  list.addEventListener('change',e=>{ const form=e.target.closest('.d-form'); if(!form) return; if(e.target.name==='where'){ const a=form.querySelector('.f-addr'); if(a) a.hidden=e.target.value==='shop' } const d=DETAILERS.find(x=>x._id===form.dataset.id); if(d){ const s=totalFor(d,form); form.querySelector('button[type=submit]').textContent=btnLabel(withFee(s)); const sm=form.querySelector('.f-sum'); if(sm) sm.innerHTML=sumHTML(s) } });
   list.addEventListener('submit',async e=>{
     const form=e.target.closest('.d-form'); if(!form) return; e.preventDefault();
     const err=form.querySelector('.f-err'), btn=form.querySelector('button[type=submit]');
@@ -990,7 +1022,8 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     if(v('customerName').length<2||LINK.test(v('customerName'))) return bad('Add your name so your detailer knows who to ask for.','customerName');
     if(digits.length<10||digits.length>15) return bad('Add a phone number with area code so your detailer can confirm the time.','phone');
     if(v('email')&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('email'))) return bad('Check your email address, or leave it blank.','email');
-    if(v('address').length<6) return bad('Add the street address where your car will be.','address');
+    const addrEl=form.querySelector('.f-addr'), needAddr=!!addrEl&&!addrEl.hidden, where=needAddr?'mobile':'shop';
+    if(needAddr&&v('address').length<6) return bad('Add the street address where your car will be.','address');
     if(LINK.test(v('notes'))||LINK.test(v('preferredTime'))) return bad('Please remove links from your notes.','notes');
             const d=DETAILERS.find(x=>x._id===form.dataset.id); if(!d) return;
     const RL='gleam-req', now=Date.now(); let log=[]; try{ log=JSON.parse(localStorage.getItem(RL)||'[]').filter(t=>now-t<36e5) }catch(e){}
@@ -1003,15 +1036,15 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
       // Gleam's server works out the real price from the detailer's listing and saves the request.
       const r=await fetch('/api/book',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await wixToken()},body:JSON.stringify({
         package:cur,detailerId:d._id,addons:[...form.querySelectorAll('input[name=addon]:checked')].map(i=>+i.value),
-        customerName:v('customerName'),phone:v('phone'),email:v('email'),address:v('address'),zip:custLoc?custLoc.zip:'',preferredTime:v('preferredTime'),notes:v('notes')})});
+        serviceType:where,customerName:v('customerName'),phone:v('phone'),email:v('email'),address:needAddr?v('address'):'',zip:custLoc?custLoc.zip:'',preferredTime:v('preferredTime'),notes:v('notes')})});
       if(!r.ok){
         if(r.status===429){ btn.disabled=false; btn.textContent=btnLabel(withFee(totalFor(d,form))); return bad('You’ve sent several requests in the last hour. Your detailers will be in touch soon.') }
         if(r.status===401){ location.assign('/login.html?returnTo=/'); return }
         throw new Error('book '+r.status);
       }
       log.push(Date.now()); try{ localStorage.setItem(RL,JSON.stringify(log)) }catch(e){}
-      sent[d._id+'|'+cur]=v('phone'); openFor=null; render();
-      if(custLoc&&(v('address')!==GP.address||custLoc.zip!==GP.zip)) saveProfile(custLoc.zip,v('address')).catch(()=>{});
+      sent[d._id+'|'+cur]=v('phone'); sentWhere[d._id+'|'+cur]=where; openFor=null; render();
+      if(needAddr&&custLoc&&(v('address')!==GP.address||custLoc.zip!==GP.zip)) saveProfile(custLoc.zip,v('address')).catch(()=>{});
     }catch(x){ btn.disabled=false; btn.textContent=btnLabel(withFee(totalFor(d,form))); err.textContent='Your request didn’t go through. Check your connection and try again.' }
   });
 
