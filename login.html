@@ -176,13 +176,14 @@ import { subscribeMember, getMemberState, login, register, verifyEmail, logout, 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const rt = params.get('returnTo') || '';
-const returnTo = rt.startsWith('/') && !rt.startsWith('//') && !rt.startsWith('/login') ? rt : '/';
+// only ever send people to a page on this same site
+const returnTo = (() => { try { const u = new URL(rt || '/', location.origin); if (u.origin === location.origin && !u.pathname.startsWith('/login')) return u.pathname + u.search + u.hash; } catch (x) {} return '/'; })();
 let mode = params.get('mode') === 'signup' ? 'up' : 'in';
 let busy = false;
 
 const MSG = {
   invalidPassword: 'That email and password don’t match. Try again, or reset your password.',
-  invalidEmail: 'We couldn’t find an account with that email. Check it, or create an account.',
+  invalidEmail: 'That email and password don’t match. Try again, reset your password, or create an account.',
   emailAlreadyExists: 'An account with that email already exists. Log in instead.',
   resetPassword: 'You need to set a new password before logging in. We can email you a link.',
   missingCaptchaToken: 'Tick “I’m not a robot” above, then press the button again.',
@@ -232,6 +233,9 @@ async function syncProfile(){
       try { localStorage.removeItem('gleam-pending-profile'); localStorage.setItem('gleam-address', data.address); } catch (x) {}
     } else if (it && it.data && /^\d{5}$/.test(it.data.zip || '')) {
       try { localStorage.setItem('gleam-zip', it.data.zip); localStorage.setItem('gleam-address', it.data.address || ''); } catch (x) {}
+    } else {
+      // nothing saved for this account: don't carry over an address left on this device by someone else
+      try { localStorage.removeItem('gleam-zip'); localStorage.removeItem('gleam-address'); } catch (x) {}
     }
   })();
   return Promise.race([work.catch(() => {}), new Promise(r => setTimeout(r, 6000))]);
@@ -285,12 +289,13 @@ $('authForm').addEventListener('submit', e => {
   const email = $('email').value.trim(), pw = $('password').value;
   if (!/^\S+@\S+\.\S+$/.test(email)) { $('authErr').textContent = 'Enter your email address.'; $('email').focus(); return; }
   if (!pw) { $('authErr').textContent = 'Enter your password.'; $('password').focus(); return; }
+  if (mode === 'in') { try { localStorage.removeItem('gleam-pending-profile'); } catch (x) {} }
   if (mode === 'in') run($('authBtn'), 'Logging in…', () => withCap('login', o => login(email, pw, o)), $('authErr'));
   else {
     const zip = $('zip').value.trim();
     if (!/^\d{5}$/.test(zip)) { $('authErr').textContent = 'Enter your 5-digit ZIP code.'; $('zip').focus(); return; }
     try { localStorage.setItem('gleam-pending-profile', JSON.stringify({ zip })); localStorage.setItem('gleam-zip', zip); } catch (x) {}
-    if (pw.length < 6) { $('authErr').textContent = 'Use at least 6 characters for your password.'; $('password').focus(); return; }
+    if (pw.length < 8) { $('authErr').textContent = 'Use at least 8 characters for your password.'; $('password').focus(); return; }
     const profile = { firstName: $('firstName').value.trim() || undefined, lastName: $('lastName').value.trim() || undefined };
     run($('authBtn'), 'Creating account…', () => withCap('signup', o => register(email, pw, profile, o)), $('authErr'));
   }
