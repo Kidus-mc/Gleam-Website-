@@ -232,7 +232,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
           </div>
           <div class="shop-box" id="shopBox" hidden>
             <p class="hint">Your shop address is shown to customers, with a map after they book, so they can find you.</p>
-            <label class="f" for="shopName"><span>Shop or car wash name <em>(optional)</em></span><input type="text" id="shopName" maxlength="80" placeholder="e.g. Sparkle Car Wash"></label>
+            <label class="f" for="shopName"><span>Shop or car wash name</span><input type="text" id="shopName" maxlength="80" placeholder="e.g. Sparkle Car Wash"></label>
             <label class="f" for="shopAddress"><span>Shop street address</span><input type="text" id="shopAddress" autocomplete="off" maxlength="120" placeholder="e.g. 4512 Main St"></label>
             <div class="row">
               <label class="f" for="shopZip"><span>Shop ZIP code</span><input type="text" id="shopZip" inputmode="numeric" maxlength="5" placeholder="e.g. 75115"></label>
@@ -414,6 +414,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
     if(!/^\d{5}$/.test($('zip').value)) return fail('Add your 5-digit ZIP code.',$('zip'));
     if(!$('modeMobile').checked&&!$('modeShop').checked) return fail('Pick how you work: mobile, a shop, or both.',$('modeMobile'));
     if($('modeShop').checked){
+      if($('shopName').value.trim().length<2) return fail('Add your shop or car wash name so customers know where they’re going.',$('shopName'));
       if($('shopAddress').value.trim().length<5||LINK.test($('shopAddress').value+' '+$('shopName').value)) return fail('Add your shop’s street address so customers can find you.',$('shopAddress'));
       if(!/^\d{5}$/.test($('shopZip').value)) return fail('Add your shop’s 5-digit ZIP code.',$('shopZip'));
       if($('shopState').value.trim()&&!/^[A-Za-z]{2}$/.test($('shopState').value.trim())) return fail('Use the 2-letter state code for your shop, like TX.',$('shopState'));
