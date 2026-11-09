@@ -1,1 +1,449 @@
-var K=Object.defineProperty;var Z=(e,t,r)=>t in e?K(e,t,{enumerable:!0,configurable:!0,writable:!0,value:r}):e[t]=r;var S=(e,t,r)=>Z(e,typeof t!="symbol"?t+"":t,r);var l="ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b";var k="https://www.wixapis.com",ee=`${k}/oauth2/token`,b=`wix-visitor-${l}`,h=null,te={load(){if(h)return h;if(typeof localStorage>"u")return null;try{let e=localStorage.getItem(b);e&&(h=JSON.parse(e))}catch{}return h},save(e){if(h=e,gk(e),!(typeof localStorage>"u"))try{localStorage.setItem(b,JSON.stringify(e))}catch{}}},E=te;function gk(t){try{if(typeof document>"u")return;if(t&&t.role==="member"&&t.accessToken){document.cookie="gleam_at="+encodeURIComponent(t.accessToken)+";path=/;max-age="+Math.max(0,Math.floor((t.expiresAt-Date.now())/1e3))+";secure;samesite=lax"}else{document.cookie="gleam_at=;path=/;max-age=0;secure;samesite=lax"}}catch{}}try{gk(te.load())}catch{}async function T(e,t="visitor"){let r=await fetch(ee,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clientId:l,...e})});if(!r.ok)throw new Error(`Wix auth failed (${r.status}).`);let n=await r.json();return{accessToken:n.access_token,refreshToken:n.refresh_token,expiresAt:Date.now()+n.expires_in*1e3,role:t}}function L(){return E.load()}function O(e){E.save(e)}function U(){try{["gleam-zip","gleam-address","gleam-pending-profile"].forEach(k=>localStorage.removeItem(k))}catch{}E.save({accessToken:"",refreshToken:"",expiresAt:0})}async function re(){let e=E.load();if(e&&e.expiresAt-6e4>Date.now())return e.accessToken;let t;if(e?.refreshToken)try{t=await T({grantType:"refresh_token",refreshToken:e.refreshToken},e.role??"visitor")}catch{}return t??(t=await T({grantType:"anonymous"})),E.save(t),t.accessToken}var g=class extends Error{constructor(r,n,o,i){super(r);S(this,"status");S(this,"code");S(this,"details");this.status=n,this.code=o,this.details=i}};async function u(e,{method:t="POST",body:r,query:n}={}){let o=new URL(e,k);for(let[s,a]of Object.entries(n??{}))for(let m of Array.isArray(a)?a:[a])o.searchParams.append(s,String(m));let i=await fetch(o,{method:t,headers:{Authorization:await re(),"Content-Type":"application/json"},body:r===void 0?void 0:JSON.stringify(r)});if(!i.ok){let s="",a,m;try{let c=await i.json();s=c?.message??"",a=c?.details?.applicationError?.code,m=c?.details}catch{}throw new g(s||`${t} ${o.pathname} failed (${i.status}).`,i.status,a,m)}return i.status===204?null:await i.json()}var ne="https://static.wixstatic.com/media";var oe=/^[\w-]+~mv2\.[a-z0-9]+$/i;function N(e){if(!e)return"";if(typeof e=="string")return e;let t=e;return t.image!=null&&typeof t.image=="object"?N(t.image):(typeof t.image=="string"?t.image:null)??t.url??t.id??""}function ie(e){if(e.startsWith("wix:image://"))return e.slice(15).split("/")[0].split("#")[0];if(oe.test(e))return e;let t=e.match(/^https:\/\/static\.wixstatic\.com\/media\/([^/?#]+)/);return t?t[1]:""}function v(e,t=600,r=600){let n=N(e);if(!n)return"";let o=ie(n);return o?`${ne}/${o}/v1/fill/w_${t},h_${r},al_c,q_90/${o}`:n}var M=["FULL"],w=e=>e?._id??e?.id??"";function D(e,t){let r=e.profile?.nickname??"",n=e.contact?.firstName??"",o=e.contact?.lastName??"",i=e.loginEmail??"",s=[n,o].filter(Boolean).join(" "),a=e._createdDate??e.createdDate;return{id:w(e),loginEmail:i,displayName:r||s||i.split("@")[0]||"Member",firstName:n,lastName:o,nickname:r,photoUrl:t(e.profile?.photo,200,200),contactId:e.contactId??"",memberSince:a?new Date(a).toISOString().slice(0,10):""}}async function P(){try{let t=(await u("/members/v1/members/my",{method:"GET",query:{fieldsets:M}}))?.member;return t&&w(t)?D(t,v):null}catch{return null}}var se={SUCCESS:"SUCCESS",REQUIRE_EMAIL_VERIFICATION:"EMAIL_VERIFICATION_REQUIRED",REQUIRE_OWNER_APPROVAL:"OWNER_APPROVAL_REQUIRED"};function W(e){let t=e?.loginState??se[e?.state??""]??"FAILURE",r=e?.stateToken??e?.data?.stateToken;return{state:t,sessionToken:e?.data?.sessionToken??e?.sessionToken??null,...r?{stateToken:r}:{},...e?.errorCode?{errorCode:e.errorCode}:{},...e?.error?{error:e.error}:{}}}function $({sessionToken:e,...t}){return t}function p(e,t){return{state:"FAILURE",error:e,...t?{errorCode:t}:{}}}var F="Wix did not return a member session.";var d={MISSING_CAPTCHA:"-19971",INVALID_CAPTCHA:"-19970",EMAIL_EXISTS:"-19995",INVALID_PASSWORD:"-19976",RESET_PASSWORD:"-19973"};function H(e){switch(e){case d.MISSING_CAPTCHA:return"missingCaptchaToken";case d.INVALID_CAPTCHA:return"invalidCaptchaToken";case d.INVALID_PASSWORD:return"invalidPassword";case d.RESET_PASSWORD:return"resetPassword";default:return"invalidEmail"}}function V(e,t){if((t?.validationError?.fieldViolations??[]).some(n=>n?.data?.type==="EMAIL"))return"invalidEmail";switch(e){case d.MISSING_CAPTCHA:return"missingCaptchaToken";case d.EMAIL_EXISTS:return"emailAlreadyExists";case d.INVALID_CAPTCHA:return"invalidCaptchaToken";default:return}}var q="/headless/v1/redirect-session",I=null;function j(){return L()?.role==="member"}async function _(e){let t=W(e);return t.state==="SUCCESS"?(I=null,t.sessionToken?(O(await ce(t.sessionToken)),{state:"SUCCESS"}):p(F)):(t.stateToken&&(I=t.stateToken),$(t))}var R=e=>e instanceof Error?e.message:String(e);async function z(e,t,r={}){let n;try{n=await u("/_api/iam/authentication/v2/login",{body:{loginId:{email:e},password:t,...r.captchaTokens?.length?{captcha_tokens:r.captchaTokens}:{}}})}catch(o){return p(R(o),o instanceof g?H(o.code):void 0)}return _(n)}async function Q(e,t,r,n={}){let o;try{o=await u("/_api/iam/authentication/v2/register",{body:{loginId:{email:e},password:t,...r?{profile:r}:{},...n.captchaTokens?.length?{captcha_tokens:n.captchaTokens}:{}}})}catch(i){return p(R(i),i instanceof g?V(i.code,i.details):void 0)}return _(o)}async function X(e){if(!I)return p("No sign-in is waiting for a verification code.");let t;try{t=await u("/_api/iam/verification/v1/auth/verify",{body:{code:e,stateToken:I}})}catch(r){return p(R(r))}return _(t)}async function ae(e){let r=(await u(q,{body:{logout:{clientId:l},callbacks:{postFlowUrl:e}}}))?.redirectSession?.fullUrl;if(!r)throw new Error("Logout couldn't start: no redirect URL returned.");return r}async function G(e="/"){let t=typeof window<"u"?new URL(e,window.location.origin).href:e,r=await ae(t);U(),typeof window<"u"&&window.location.assign(r)}async function ce(e){let{verifier:t,challenge:r}=await le(),n=Y(),i=(await u(q,{body:{auth:{authRequest:{clientId:l,codeChallenge:r,codeChallengeMethod:"S256",responseMode:"web_message",responseType:"code",scope:"offline_access",state:n,sessionToken:e},prompt:"none"}}}))?.redirectSession?.fullUrl;if(!i)throw new Error("Login couldn't finish: no authorization URL returned.");let s=await ue(i,n);return T({grantType:"authorization_code",code:s,codeVerifier:t},"member")}async function ue(e,t){if(typeof document>"u"){let r=await(await fetch(e)).text(),n=s=>r.match(new RegExp(`'${s}':\\s*'([^']*)'`))?.[1],o=n("error");if(o)throw new Error(`Login was refused: ${o}`);let i=n("code");if(!i||n("state")!==t)throw new Error("Login couldn't finish: no authorization code.");return i}return new Promise((r,n)=>{let o=document.createElement("iframe");o.style.display="none";let i=()=>{window.removeEventListener("message",s),clearTimeout(a),o.remove()},s=m=>{let c=m.data;!c||c.state!==t||(i(),c.error?n(new Error(`Login was refused: ${c.error}`)):c.code?r(c.code):n(new Error("Login couldn't finish: no authorization code.")))},a=setTimeout(()=>{i(),n(new Error("Login timed out. Is this page's origin on the OAuth app's allowed domains?"))},12e4);window.addEventListener("message",s),o.src=e,document.body.appendChild(o)})}function B(e){let t="";for(let r of e)t+=String.fromCharCode(r);return btoa(t).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}function Y(){return B(crypto.getRandomValues(new Uint8Array(32)))}async function le(){let e=Y(),t=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(e));return{verifier:e,challenge:B(new Uint8Array(t))}}var de={member:null,loggedIn:!1,loading:!0,error:null},A=de,C=new Set,J=!1;function f(e){A={...A,...e};for(let t of C)t()}function fe(){return A}function me(e){return C.add(e),!J&&typeof window<"u"&&(J=!0,x()),()=>C.delete(e)}async function x(){f({loading:!0,error:null});let e=j();if(e===!1){f({member:null,loggedIn:!1,loading:!1});return}let t=await P();f({member:t,loggedIn:e??t!==null,loading:!1})}async function y(e){try{let t=await e();return t.state==="SUCCESS"&&t.redirectUrl?(window.location.assign(t.redirectUrl),t):(t.state==="SUCCESS"&&await x(),t.state==="FAILURE"&&f({error:t.error??t.errorCode??"Could not log in."}),t)}catch(t){throw f({error:t instanceof Error?t.message:String(t)}),t}}function ge(e,t,r){return y(()=>z(e,t,r))}function pe(e,t,r,n){return y(()=>Q(e,t,r,n))}function he(e){return y(()=>X(e))}async function Ee(e){f({member:null,loggedIn:!1});try{await G(e)}catch(t){throw f({error:t instanceof Error?t.message:String(t)}),t}}export{l as WIX_CLIENT_ID,fe as getMemberState,ge as login,Ee as logout,x as refreshMember,pe as register,me as subscribeMember,he as verifyEmail,u as wixRequest};
+// Gleam member login (Wix Headless).
+// Used by login.html and account.html:
+//   import { subscribeMember, getMemberState, login, register, verifyEmail, logout, wixRequest, WIX_CLIENT_ID } from '/js/gleam-auth.js';
+// Readable source: no build step. Edit this file directly.
+
+// ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
+
+// Gleam's public Wix client ID (safe to show; the secret lives only on Netlify).
+export const WIX_CLIENT_ID = "ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b";
+
+const WIX_API_BASE = "https://www.wixapis.com";
+const TOKEN_URL = `${WIX_API_BASE}/oauth2/token`;
+const STORAGE_KEY = `wix-visitor-${WIX_CLIENT_ID}`;
+// Things saved on this device for the logged-in person; wiped on logout.
+const PERSONAL_KEYS = ["gleam-zip", "gleam-address", "gleam-pending-profile"];
+
+// ---------------------------------------------------------------------------
+// Login tokens: kept in localStorage, mirrored into the "gleam_at" cookie so
+// Netlify's server-side login wall can check members before sending a page.
+// ---------------------------------------------------------------------------
+
+let memory = null;
+
+function syncLoginCookie(tokens) {
+  try {
+    if (typeof document === "undefined")
+      return;
+    if (tokens && tokens.role === "member" && tokens.accessToken) {
+      const maxAge = Math.max(0, Math.floor((tokens.expiresAt - Date.now()) / 1e3));
+      document.cookie = "gleam_at=" + encodeURIComponent(tokens.accessToken) + ";path=/;max-age=" + maxAge + ";secure;samesite=lax";
+    } else {
+      document.cookie = "gleam_at=;path=/;max-age=0;secure;samesite=lax";
+    }
+  } catch {
+  }
+}
+
+const store = {
+  load() {
+    if (memory)
+      return memory;
+    if (typeof localStorage === "undefined")
+      return null;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw)
+        memory = JSON.parse(raw);
+    } catch {
+    }
+    return memory;
+  },
+  save(tokens) {
+    memory = tokens;
+    syncLoginCookie(tokens);
+    if (typeof localStorage === "undefined")
+      return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
+    } catch {
+    }
+  }
+};
+
+// Keep the cookie in step with whatever login is already on this device.
+try {
+  syncLoginCookie(store.load());
+} catch {
+}
+
+async function mintTokens(body, role = "visitor") {
+  const res = await fetch(TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clientId: WIX_CLIENT_ID, ...body })
+  });
+  if (!res.ok)
+    throw new Error(`Wix auth failed (${res.status}).`);
+  const data = await res.json();
+  return { accessToken: data.access_token, refreshToken: data.refresh_token, expiresAt: Date.now() + data.expires_in * 1e3, role };
+}
+
+function clearTokens() {
+  try {
+    PERSONAL_KEYS.forEach((k) => localStorage.removeItem(k));
+  } catch {
+  }
+  store.save({ accessToken: "", refreshToken: "", expiresAt: 0 });
+}
+
+// A valid access token: reuse it, refresh it, or start a visitor session.
+async function accessToken() {
+  const t = store.load();
+  if (t && t.expiresAt - 6e4 > Date.now())
+    return t.accessToken;
+  let fresh;
+  if (t?.refreshToken) {
+    try {
+      fresh = await mintTokens({ grantType: "refresh_token", refreshToken: t.refreshToken }, t.role ?? "visitor");
+    } catch {
+    }
+  }
+  fresh ?? (fresh = await mintTokens({ grantType: "anonymous" }));
+  store.save(fresh);
+  return fresh.accessToken;
+}
+
+// ---------------------------------------------------------------------------
+// Calling Wix (or Gleam's own /api) with the current login
+// ---------------------------------------------------------------------------
+
+class WixApiError extends Error {
+  constructor(message, status, code, details) {
+    super(message);
+    this.status = status;
+    this.code = code;
+    // The response's `details` as Wix sent it (applicationError, validationError).
+    this.details = details;
+  }
+}
+
+export async function wixRequest(path, { method = "POST", body, query } = {}) {
+  const url = new URL(path, WIX_API_BASE);
+  for (const [k, v] of Object.entries(query ?? {})) {
+    for (const item of Array.isArray(v) ? v : [v])
+      url.searchParams.append(k, String(item));
+  }
+  const res = await fetch(url, {
+    method,
+    headers: { Authorization: await accessToken(), "Content-Type": "application/json" },
+    body: body === void 0 ? void 0 : JSON.stringify(body)
+  });
+  if (!res.ok) {
+    let message = "", code, details;
+    try {
+      const j = await res.json();
+      message = j?.message ?? "";
+      code = j?.details?.applicationError?.code;
+      details = j?.details;
+    } catch {
+    }
+    throw new WixApiError(message || `${method} ${url.pathname} failed (${res.status}).`, res.status, code, details);
+  }
+  return res.status === 204 ? null : await res.json();
+}
+
+// ---------------------------------------------------------------------------
+// The logged-in member
+// ---------------------------------------------------------------------------
+
+async function fetchCurrentMember() {
+  try {
+    const res = await wixRequest("/members/v1/members/my", { method: "GET", query: { fieldsets: ["FULL"] } });
+    const raw = res?.member;
+    const id = raw?._id ?? raw?.id ?? "";
+    if (!raw || !id)
+      return null;
+    const nickname = raw.profile?.nickname ?? "";
+    const firstName = raw.contact?.firstName ?? "";
+    const lastName = raw.contact?.lastName ?? "";
+    const loginEmail = raw.loginEmail ?? "";
+    const fullName = [firstName, lastName].filter(Boolean).join(" ");
+    const created = raw._createdDate ?? raw.createdDate;
+    return {
+      id,
+      loginEmail,
+      displayName: nickname || fullName || loginEmail.split("@")[0] || "Member",
+      firstName,
+      lastName,
+      nickname,
+      contactId: raw.contactId ?? "",
+      memberSince: created ? new Date(created).toISOString().slice(0, 10) : ""
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Log in, sign up, verify email, log out
+// ---------------------------------------------------------------------------
+
+const REDIRECT_SESSION = "/headless/v1/redirect-session";
+const REST_STATES = {
+  SUCCESS: "SUCCESS",
+  REQUIRE_EMAIL_VERIFICATION: "EMAIL_VERIFICATION_REQUIRED",
+  REQUIRE_OWNER_APPROVAL: "OWNER_APPROVAL_REQUIRED"
+};
+const NO_SESSION_ERROR = "Wix did not return a member session.";
+const AUTH_ERROR_CODES = {
+  MISSING_CAPTCHA: "-19971",
+  INVALID_CAPTCHA: "-19970",
+  EMAIL_EXISTS: "-19995",
+  INVALID_PASSWORD: "-19976",
+  RESET_PASSWORD: "-19973"
+};
+let pendingStateToken = null;
+
+const failure = (error, errorCode) => ({ state: "FAILURE", error, ...errorCode ? { errorCode } : {} });
+const message = (e) => e instanceof Error ? e.message : String(e);
+// "I'm not a robot" answers, when the page has them.
+const captcha = (options) => options.captchaTokens?.length ? { captcha_tokens: options.captchaTokens } : {};
+
+function loginErrorCode(code) {
+  switch (code) {
+    case AUTH_ERROR_CODES.MISSING_CAPTCHA:
+      return "missingCaptchaToken";
+    case AUTH_ERROR_CODES.INVALID_CAPTCHA:
+      return "invalidCaptchaToken";
+    case AUTH_ERROR_CODES.INVALID_PASSWORD:
+      return "invalidPassword";
+    case AUTH_ERROR_CODES.RESET_PASSWORD:
+      return "resetPassword";
+    default:
+      return "invalidEmail";
+  }
+}
+
+function registerErrorCode(code, details) {
+  const violations = details?.validationError?.fieldViolations ?? [];
+  if (violations.some((v) => v?.data?.type === "EMAIL"))
+    return "invalidEmail";
+  switch (code) {
+    case AUTH_ERROR_CODES.MISSING_CAPTCHA:
+      return "missingCaptchaToken";
+    case AUTH_ERROR_CODES.EMAIL_EXISTS:
+      return "emailAlreadyExists";
+    case AUTH_ERROR_CODES.INVALID_CAPTCHA:
+      return "invalidCaptchaToken";
+    default:
+      return void 0;
+  }
+}
+
+// Turns a Wix login/sign-up/verify answer into a result for the page.
+async function finish(raw) {
+  const state = raw?.loginState ?? REST_STATES[raw?.state ?? ""] ?? "FAILURE";
+  const stateToken = raw?.stateToken ?? raw?.data?.stateToken;
+  const sessionToken = raw?.data?.sessionToken ?? raw?.sessionToken ?? null;
+  if (state === "SUCCESS") {
+    pendingStateToken = null;
+    if (!sessionToken)
+      return failure(NO_SESSION_ERROR);
+    store.save(await memberTokensForSession(sessionToken));
+    return { state: "SUCCESS" };
+  }
+  if (stateToken)
+    pendingStateToken = stateToken;
+  return {
+    state,
+    ...stateToken ? { stateToken } : {},
+    ...raw?.errorCode ? { errorCode: raw.errorCode } : {},
+    ...raw?.error ? { error: raw.error } : {}
+  };
+}
+
+async function loginMember(email, password, options = {}) {
+  let raw;
+  try {
+    raw = await wixRequest("/_api/iam/authentication/v2/login", { body: { loginId: { email }, password, ...captcha(options) } });
+  } catch (e) {
+    return failure(message(e), e instanceof WixApiError ? loginErrorCode(e.code) : void 0);
+  }
+  return finish(raw);
+}
+
+async function registerMember(email, password, profile, options = {}) {
+  let raw;
+  try {
+    raw = await wixRequest("/_api/iam/authentication/v2/register", {
+      body: { loginId: { email }, password, ...profile ? { profile } : {}, ...captcha(options) }
+    });
+  } catch (e) {
+    return failure(message(e), e instanceof WixApiError ? registerErrorCode(e.code, e.details) : void 0);
+  }
+  return finish(raw);
+}
+
+async function verifyMemberEmail(verificationCode) {
+  if (!pendingStateToken)
+    return failure("No sign-in is waiting for a verification code.");
+  let raw;
+  try {
+    raw = await wixRequest("/_api/iam/verification/v1/auth/verify", { body: { code: verificationCode, stateToken: pendingStateToken } });
+  } catch (e) {
+    return failure(message(e));
+  }
+  return finish(raw);
+}
+
+async function logoutMember(returnTo = "/") {
+  const target = new URL(returnTo, window.location.origin).href;
+  const res = await wixRequest(REDIRECT_SESSION, { body: { logout: { clientId: WIX_CLIENT_ID }, callbacks: { postFlowUrl: target } } });
+  const url = res?.redirectSession?.fullUrl;
+  if (!url)
+    throw new Error("Logout couldn't start: no redirect URL returned.");
+  clearTokens();
+  window.location.assign(url);
+}
+
+// Swaps a one-time Wix session token for member login tokens (PKCE, in a hidden frame).
+async function memberTokensForSession(sessionToken) {
+  const { verifier, challenge } = await pkce();
+  const state = randomString();
+  const res = await wixRequest(REDIRECT_SESSION, {
+    body: {
+      auth: {
+        authRequest: {
+          clientId: WIX_CLIENT_ID,
+          codeChallenge: challenge,
+          codeChallengeMethod: "S256",
+          responseMode: "web_message",
+          responseType: "code",
+          scope: "offline_access",
+          state,
+          sessionToken
+        },
+        prompt: "none"
+      }
+    }
+  });
+  const url = res?.redirectSession?.fullUrl;
+  if (!url)
+    throw new Error("Login couldn't finish: no authorization URL returned.");
+  const code = await authorizationCode(url, state);
+  return mintTokens({ grantType: "authorization_code", code, codeVerifier: verifier }, "member");
+}
+
+function authorizationCode(url, state) {
+  return new Promise((resolve, reject) => {
+    const frame = document.createElement("iframe");
+    frame.style.display = "none";
+    const done = () => {
+      window.removeEventListener("message", onMessage);
+      clearTimeout(timer);
+      frame.remove();
+    };
+    const onMessage = (e) => {
+      const data = e.data;
+      if (!data || data.state !== state)
+        return;
+      done();
+      if (data.error)
+        reject(new Error(`Login was refused: ${data.error}`));
+      else if (data.code)
+        resolve(data.code);
+      else
+        reject(new Error("Login couldn't finish: no authorization code."));
+    };
+    const timer = setTimeout(() => {
+      done();
+      reject(new Error("Login timed out. Is this page's origin on the OAuth app's allowed domains?"));
+    }, 12e4);
+    window.addEventListener("message", onMessage);
+    frame.src = url;
+    document.body.appendChild(frame);
+  });
+}
+
+function base64url(bytes) {
+  let s = "";
+  for (const b of bytes)
+    s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function randomString() {
+  return base64url(crypto.getRandomValues(new Uint8Array(32)));
+}
+
+async function pkce() {
+  const verifier = randomString();
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  return { verifier, challenge: base64url(new Uint8Array(digest)) };
+}
+
+// ---------------------------------------------------------------------------
+// Member state the pages subscribe to
+// ---------------------------------------------------------------------------
+
+let state = { member: null, loggedIn: false, loading: true, error: null };
+const listeners = new Set();
+let started = false;
+
+function setState(patch) {
+  state = { ...state, ...patch };
+  for (const l of listeners)
+    l();
+}
+
+export function getMemberState() {
+  return state;
+}
+
+export function subscribeMember(listener) {
+  listeners.add(listener);
+  if (!started && typeof window !== "undefined") {
+    started = true;
+    void refreshMember();
+  }
+  return () => listeners.delete(listener);
+}
+
+async function refreshMember() {
+  setState({ loading: true, error: null });
+  if (store.load()?.role !== "member") {
+    setState({ member: null, loggedIn: false, loading: false });
+    return;
+  }
+  const member = await fetchCurrentMember();
+  setState({ member, loggedIn: true, loading: false });
+}
+
+async function runLogin(action) {
+  try {
+    const result = await action();
+    if (result.state === "SUCCESS")
+      await refreshMember();
+    if (result.state === "FAILURE")
+      setState({ error: result.error ?? result.errorCode ?? "Could not log in." });
+    return result;
+  } catch (e) {
+    setState({ error: e instanceof Error ? e.message : String(e) });
+    throw e;
+  }
+}
+
+export function login(email, password, options) {
+  return runLogin(() => loginMember(email, password, options));
+}
+
+export function register(email, password, profile, options) {
+  return runLogin(() => registerMember(email, password, profile, options));
+}
+
+export function verifyEmail(code) {
+  return runLogin(() => verifyMemberEmail(code));
+}
+
+export async function logout(returnTo) {
+  setState({ member: null, loggedIn: false });
+  try {
+    await logoutMember(returnTo);
+  } catch (e) {
+    setState({ error: e instanceof Error ? e.message : String(e) });
+    throw e;
+  }
+}
