@@ -1,4 +1,4 @@
-/* Shared styles for Gleam's text pages (privacy, terms, 404): same tokens as the homepage */
+/* Shared styles for Gleam's simpler pages (login, account, privacy, terms, 404): same color tokens as the homepage */
 :root{
   --background:#08080a; --foreground:#f3f1ea; --surface:#111114; --surface-2:#17171b;
   --muted:#9a9992; --line:rgba(243,241,234,0.1); --line-strong:rgba(243,241,234,0.22);

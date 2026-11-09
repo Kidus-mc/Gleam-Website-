@@ -1,4 +1,4 @@
-/* Gleam light mode + theme switch. Dark is the default; light applies when <html data-theme="light">. */
+/* Gleam light mode + the Appearance menu (Light, Dark, Match my device). Dark is the default; light applies when <html data-theme="light">. */
 :root[data-theme="light"]{
   --background:#ffffff; --foreground:#0e0e10; --surface:#f3f4f6; --surface-2:#e9eaee;
   --muted:#55565c; --line:rgba(14,14,16,0.1); --line-strong:rgba(14,14,16,0.22);
@@ -19,7 +19,7 @@
 :root[data-theme="light"] .foot-bar img,
 :root[data-theme="light"] header nav img{filter:invert(1)}
 
-/* theme switch button */
+/* the button that opens the Appearance menu */
 .theme-btn{flex:none;display:inline-grid;place-items:center;width:44px;height:44px;padding:0;border-radius:9999px;border:1px solid var(--line-strong);background:transparent;color:var(--foreground);cursor:pointer;pointer-events:auto;transition:border-color 300ms ease-out,transform 400ms cubic-bezier(0.16,1,0.3,1)}
 .theme-btn:hover{border-color:var(--foreground)}
 .theme-btn:active{transform:scale(0.92)}
