@@ -38,37 +38,12 @@
 <script src="/assets/gleam.js" defer></script>
 
 <script id="wix-site-script" src="https://manage.wix.com/_api/headless-business-setup/v1/headless-business/site-script.js" data-client-id="ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b" async></script><style>
-/* account pages: one narrow working column; cards only where a thing is a separate object */
+/* account page styles */
 [hidden]{display:none!important}
-.auth{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(32px,6vw,80px);align-items:start}
 @media (min-width:960px){.auth{grid-template-columns:minmax(0,5fr) minmax(0,6fr)}}
 .auth-lede{margin-top:20px;max-width:42ch;color:var(--muted);font-size:clamp(17px,1.5vw,20px);line-height:1.5}
-.auth-points{margin-top:28px;list-style:none;border-top:1px solid var(--line);max-width:44ch}
-.auth-points li{padding-block:14px;border-bottom:1px solid var(--line);font-size:15px;color:var(--muted)}
-.auth-points b{display:block;color:var(--foreground);font-weight:600;font-size:16px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:clamp(20px,3vw,36px)}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid var(--line-strong);border-radius:9999px;margin-bottom:28px}
-.tabs button{min-height:44px;border:0;border-radius:9999px;background:none;color:var(--muted);font:inherit;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;cursor:pointer}
-.tabs button[aria-selected="true"]{background:var(--foreground);color:var(--background)}
-.stack{display:flex;flex-direction:column;gap:16px}
-.row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:16px}
-.f{display:flex;flex-direction:column;gap:6px;min-width:0}
-.f > span{font-size:14px;color:var(--muted)}
-.f input{width:100%;min-height:48px;padding:0 14px;background:var(--background);color:var(--foreground);border:1px solid var(--line-strong);border-radius:6px;font:inherit;font-size:16px}
-.f input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
-.pw{position:relative}
-.pw input{padding-right:72px}
-.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-height:36px;padding:0 10px;border:0;background:none;color:var(--muted);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
-.pw button:hover{color:var(--foreground)}
-.err{color:var(--accent-2);font-size:15px}
-.err:empty{display:none}
-.ok-note{padding:14px 16px;border:1px solid var(--line-strong);border-radius:6px;font-size:15px}
-.wide{width:100%}
 .pill[disabled]{opacity:0.6;cursor:progress}
-.linkish{align-self:flex-start;min-height:44px;padding:0;border:0;background:none;color:var(--muted);font:inherit;font-size:15px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-.linkish:hover{color:var(--foreground)}
-.fine{font-size:13px;color:var(--muted)}
-.fine a{color:var(--foreground);text-underline-offset:3px}
 .acct-meta{margin-top:16px;color:var(--muted)}
 .acct-actions{margin-top:24px;display:flex;flex-wrap:wrap;gap:12px}
 .acct-actions .ghost{background:none;color:var(--foreground);font:inherit;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;cursor:pointer}

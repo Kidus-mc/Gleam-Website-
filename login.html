@@ -38,7 +38,7 @@
 <script src="/assets/gleam.js" defer></script>
 
 <script id="wix-site-script" src="https://manage.wix.com/_api/headless-business-setup/v1/headless-business/site-script.js" data-client-id="ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b" async></script><style>
-/* account pages: one narrow working column; cards only where a thing is a separate object */
+/* login page styles */
 [hidden]{display:none!important}
 .cap{min-height:78px;display:flex;justify-content:center}
 .grecaptcha-badge{visibility:hidden}
@@ -71,25 +71,12 @@
 .linkish:hover{color:var(--foreground)}
 .fine{font-size:13px;color:var(--muted)}
 .fine a{color:var(--foreground);text-underline-offset:3px}
-.acct-meta{margin-top:16px;color:var(--muted)}
-.acct-actions{margin-top:24px;display:flex;flex-wrap:wrap;gap:12px}
-.acct-actions .ghost{background:none;color:var(--foreground);font:inherit;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;cursor:pointer}
-.acct-grid{margin-top:clamp(40px,6vw,64px);display:grid;grid-template-columns:minmax(0,1fr);gap:24px}
 @media (min-width:960px){.acct-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
-.panel h2{font-size:22px;font-weight:600;line-height:1.2}
-.panel .sub{margin-top:6px;font-size:15px;color:var(--muted)}
 .items{margin-top:20px;list-style:none;border-top:1px solid var(--line)}
 .items > li{padding-block:16px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px}
 .items .t{font-weight:600}
 .items .s{grid-column:1/-1;font-size:14px;color:var(--muted)}
 .items .p{font-weight:600;font-variant-numeric:tabular-nums}
-.chip{display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:6px 12px;border-radius:9999px;border:1px solid var(--line-strong);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em}
-.chip::before{content:"";width:8px;height:8px;border-radius:9999px;background:var(--muted)}
-.chip.live::before{background:#3fb96b}
-.chip.wait::before{background:#e0a33a}
-.chip.no::before{background:var(--accent)}
-.empty{margin-top:20px;color:var(--muted)}
-.empty .actions{margin-top:16px}
 .skel{color:var(--muted)}
 .prices{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:8px}
 .prices div{padding:10px 12px;border:1px solid var(--line);border-radius:6px}
