@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <script>/* one site: the Wix copy sends people to Gleam on Netlify */if(/wix-site-host\.com$/.test(location.hostname))location.replace('https://allgleam.netlify.app'+location.pathname+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>/* login wall: members only */(function(){try{var t=JSON.parse(localStorage.getItem('wix-visitor-ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b')||'null');if(t&&t.role==='member'&&t.refreshToken)return}catch(e){}document.documentElement.style.visibility='hidden';location.replace('/login.html?returnTo='+encodeURIComponent(location.pathname+location.search+location.hash))})()</script>
+<script>/* login wall: members only */(function(){try{var t=JSON.parse(localStorage.getItem('sb-huskusxmuyxiucufcmkv-auth-token')||'null');if(t&&t.refresh_token)return}catch(e){}document.documentElement.style.visibility='hidden';location.replace('/login.html?returnTo='+encodeURIComponent(location.pathname+location.search+location.hash))})()</script>
 <script>if(location.protocol==='http:'&&!/^(localhost|127\.)/.test(location.hostname))location.replace('https:'+location.href.slice(5))</script>
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Become a Detailer on Gleam | Set Your Own Prices</title>
@@ -326,22 +326,10 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
 
 <script>
 (function(){
-  const WIX='https://www.wixapis.com', CLIENT_ID='ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b', TK='wix-visitor-'+CLIENT_ID;
-  try{ const _t=JSON.parse(localStorage.getItem(TK)||'null'); if(_t&&_t.role==='member') document.querySelectorAll('[data-account-link]').forEach(a=>{ a.textContent='My account'; a.href='/account.html' }) }catch(e){}
-  async function mintToken(body,role){
-    const r=await fetch(WIX+'/oauth2/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({clientId:CLIENT_ID},body))});
-    if(!r.ok) throw new Error('auth');
-    const d=await r.json(); const t={accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:role||'visitor'};
-    try{localStorage.setItem(TK,JSON.stringify(t))}catch(e){}
-    (function(t){try{if(t&&t.role==='member'&&t.accessToken){document.cookie='gleam_at='+encodeURIComponent(t.accessToken)+';path=/;max-age='+Math.max(0,Math.floor((t.expiresAt-Date.now())/1000))+';secure;samesite=lax'}else{document.cookie='gleam_at=;path=/;max-age=0;secure;samesite=lax'}}catch(e){}})(t);
-    return t.accessToken;
-  }
-  async function wixToken(){
-    let t=null; try{t=JSON.parse(localStorage.getItem(TK)||'null')}catch(e){}
-    if(t&&t.accessToken&&t.expiresAt-60000>Date.now()) return t.accessToken;
-    if(t&&t.refreshToken){ try{ return await mintToken({grantType:'refresh_token',refreshToken:t.refreshToken},t.role) }catch(e){} }
-    return mintToken({grantType:'anonymous'});
-  }
+  const GA=import('/js/gleam-auth.js'); /* Supabase login: keeps the login fresh and hands out its token */
+  const SB='sb-huskusxmuyxiucufcmkv-auth-token', signedIn=()=>{ try{ const t=JSON.parse(localStorage.getItem(SB)||'null'); return !!(t&&t.refresh_token) }catch(e){ return false } };
+  async function loginToken(){ try{ return 'Bearer '+((await (await GA).accessToken())||'') }catch(e){ return '' } }
+  try{ if(signedIn()) document.querySelectorAll('[data-account-link]').forEach(a=>{ a.textContent='My account'; a.href='/account.html' }) }catch(e){}
   const ZIPS_URL='https://cdn.jsdelivr.net/npm/zipcodes@8.0.0/lib/codes.js';
   let zipsP=null;
   function loadZips(){
@@ -446,8 +434,10 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
       data.serviceMobile=$('modeMobile').checked; data.serviceShop=$('modeShop').checked;
       if(data.serviceShop){ data.shopName=$('shopName').value.trim(); data.shopAddress=$('shopAddress').value.trim(); data.shopZip=$('shopZip').value; data.shopCity=$('shopCity').value.trim(); data.shopState=$('shopState').value.trim().toUpperCase() }
       if(ADDONS.length){ data.addons=ADDONS.map(x=>({name:x.name,description:x.description||'',price:x.price})); data.addonsSummary=ADDONS.map(x=>x.name+' $'+x.price).join(' · '); data.priceAddons=Math.min(...ADDONS.map(x=>x.price)) }
-      const r=await fetch(WIX+'/wix-data/v2/items',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await wixToken()},
-        body:JSON.stringify({dataCollectionId:'DetailerApplications',dataItem:{data}})});
+      // Gleam's server checks the login and keeps only the fields it knows.
+      const r=await fetch('/api/apply',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await loginToken()},body:JSON.stringify(data)});
+      if(r.status===401){ location.assign('/login.html?returnTo=/detailers.html'); return }
+      if(r.status===429){ btn.disabled=false; btn.textContent='Submit application'; err.textContent='You’ve already applied today. We’ll review your application and contact you.'; return }
       if(!r.ok) throw new Error(String(r.status));
       log.push(Date.now()); try{ localStorage.setItem('gleam-apply',JSON.stringify(log)) }catch(e){}
       form.hidden=true; $('previewWrap').hidden=true;
@@ -482,7 +472,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
     const blob=await shrink(p.file); const type=blob.type||'image/jpeg';
     const name=('work-'+Date.now()+'-'+Math.random().toString(36).slice(2,7))+(type==='image/png'?'.png':'.jpg');
     // Gleam's server checks the login and hands out a one-time upload link into the "Detailer applications" folder.
-    const r=await fetch('/api/upload-url',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await wixToken()},body:JSON.stringify({mimeType:type,sizeInBytes:blob.size})});
+    const r=await fetch('/api/upload-url',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await loginToken()},body:JSON.stringify({mimeType:type,sizeInBytes:blob.size})});
     if(!r.ok) throw new Error('url '+r.status);
     const {uploadUrl}=await r.json();
     const u=await fetch(uploadUrl+(uploadUrl.includes('?')?'&':'?')+'filename='+encodeURIComponent(name),{method:'PUT',headers:{'Content-Type':type},body:blob});

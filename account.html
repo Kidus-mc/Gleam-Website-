@@ -117,7 +117,7 @@
   </div>
 </main>
 <script type="module">
-import { subscribeMember, getMemberState, logout, wixRequest } from '/js/gleam-auth.js';
+import { subscribeMember, getMemberState, logout, api } from '/js/gleam-auth.js';
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money = v => '$' + (Math.round(v * 100) % 100 ? Number(v).toFixed(2) : Math.round(v));
@@ -127,13 +127,14 @@ let loaded = false;
 
 // your own booking requests, checked by Gleam's server
 async function myBookings(){
-  const res = await wixRequest(location.origin + '/api/my-bookings', { method: 'GET' });
+  const res = await api('/api/my-bookings');
   return (res && res.items) || [];
 }
 
-async function query(col){
-  const res = await wixRequest('/wix-data/v2/items/query', { body: { dataCollectionId: col, query: { paging: { limit: 100 } } } });
-  return (res && res.dataItems || []).map(x => Object.assign({ _id: x.id }, x.data || {}));
+// your latest detailer application, and whether it's live
+async function myApplication(){
+  const res = await api('/api/my-application');
+  return { apps: res.application ? [res.application] : [], live: !!res.live };
 }
 
 // directions open in Apple Maps on Apple devices, Google Maps everywhere else
@@ -160,7 +161,7 @@ function renderBookings(list){
   }).join('') + '</ul>';
 }
 
-function renderDetailer(apps, live){
+function renderDetailer(apps, isLiveNow){
   const box = $('detailer');
   if (!apps.length) {
     box.innerHTML = '<div class="empty"><p>Detail cars? List your services, set your own prices, and get booked by customers near you.</p><div class="actions"><a class="ghost" href="/detailers.html">Become a detailer</a></div></div>';
@@ -168,7 +169,7 @@ function renderDetailer(apps, live){
   }
   apps.sort((a, b) => (created(b) || 0) - (created(a) || 0));
   const a = apps[0];
-  const isLive = live.some(d => d.applicationId === a._id);
+  const isLive = isLiveNow;
   const declined = a.status === 'declined' || a.status === 'rejected';
   const chip = isLive ? '<span class="chip live">Live on Gleam</span>' : declined ? '<span class="chip no">Not approved</span>' : '<span class="chip wait">Under review</span>';
   const P = [['priceExterior','Exterior'],['priceInterior','Interior'],['priceFull','Full Detail']].filter(([k]) => typeof a[k] === 'number' && a[k] > 0);
@@ -183,25 +184,24 @@ function renderDetailer(apps, live){
 
 async function loadData(){
   if (loaded) return; loaded = true;
-  const [b, d, l] = await Promise.allSettled([myBookings(), query('DetailerApplications'), query('Detailers')]);
+  const [b, d] = await Promise.allSettled([myBookings(), myApplication()]);
   if (b.status === 'fulfilled') renderBookings(b.value); else $('bookings').innerHTML = '<p class="empty">We couldn’t load your requests right now. Refresh to try again.</p>';
-  if (d.status === 'fulfilled') renderDetailer(d.value, l.status === 'fulfilled' ? l.value : []); else $('detailer').innerHTML = '<p class="empty">We couldn’t load your detailer details right now. Refresh to try again.</p>';
+  if (d.status === 'fulfilled') renderDetailer(d.value.apps, d.value.live); else $('detailer').innerHTML = '<p class="empty">We couldn’t load your detailer details right now. Refresh to try again.</p>';
 }
 
 function render(){
   const s = getMemberState();
   $('acctLoading').hidden = !s.loading;
-  $('acctAnon').hidden = s.loading || s.loggedIn;
-  $('acctMember').hidden = s.loading || !s.loggedIn;
-  if (s.loading || !s.loggedIn) return;
+  $('acctAnon').hidden = s.loading || !!s.member;
+  $('acctMember').hidden = s.loading || !s.member;
+  if (s.loading || !s.member) return;
   const m = s.member;
   $('hello').textContent = m && m.firstName ? 'Hi, ' + m.firstName : 'Your account';
-  $('meta').textContent = m ? [m.loginEmail, m.memberSince ? 'Member since ' + new Date(m.memberSince + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : ''].filter(Boolean).join(' · ') : 'Profile details unavailable.';
+  $('meta').textContent = m ? [m.loginEmail, m.memberSince ? 'Member since ' + new Date(m.memberSince).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : ''].filter(Boolean).join(' · ') : 'Profile details unavailable.';
   loadData();
 }
-$('logoutBtn').addEventListener('click', () => { $('logoutBtn').disabled = true; logout('/').catch(() => { $('logoutBtn').disabled = false; }); });
+$('logoutBtn').addEventListener('click', () => { $('logoutBtn').disabled = true; logout('/login.html'); });
 subscribeMember(render);
-render();
 </script>
 
 

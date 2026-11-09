@@ -40,8 +40,11 @@
 <script id="wix-site-script" src="https://manage.wix.com/_api/headless-business-setup/v1/headless-business/site-script.js" data-client-id="ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b" async></script><style>
 /* login page styles */
 [hidden]{display:none!important}
-.cap{min-height:78px;display:flex;justify-content:center}
-.grecaptcha-badge{visibility:hidden}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;border:1px solid var(--line-strong);border-radius:999px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.gbtn:hover{border-color:var(--foreground)}
+.gbtn[disabled]{opacity:0.6;cursor:progress}
+.or{display:flex;align-items:center;gap:12px;margin:0;color:var(--muted);font-size:14px}
+.or::before,.or::after{content:"";flex:1;border-top:1px solid var(--line-strong)}
 .auth{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(32px,6vw,80px);align-items:start}
 @media (min-width:960px){.auth{grid-template-columns:minmax(0,5fr) minmax(0,6fr)}}
 .auth-lede{margin-top:20px;max-width:42ch;color:var(--muted);font-size:clamp(17px,1.5vw,20px);line-height:1.5}
@@ -121,6 +124,8 @@
           <button type="button" role="tab" id="tabUp" aria-selected="false" aria-controls="authForm">Create account</button>
         </div>
         <form id="authForm" class="stack" novalidate>
+          <button type="button" class="gbtn" id="googleBtn"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg><span>Continue with Google</span></button>
+          <p class="or">or use your email</p>
           <div class="row2" id="nameRow" hidden>
             <label class="f" for="firstName"><span>First name</span><input id="firstName" autocomplete="given-name" maxlength="40"></label>
             <label class="f" for="lastName"><span>Last name</span><input id="lastName" autocomplete="family-name" maxlength="40"></label>
@@ -128,25 +133,23 @@
           <label class="f" for="zip" id="zipRow" hidden><span>ZIP code</span><input id="zip" inputmode="numeric" autocomplete="postal-code" maxlength="5"><small class="fine">We use it to show detailers near you. You can change it anytime.</small></label>
           <label class="f" for="email"><span>Email</span><input id="email" type="email" autocomplete="email" maxlength="120" required></label>
           <label class="f" for="password"><span>Password</span><span class="pw"><input id="password" type="password" autocomplete="current-password" maxlength="100" required><button type="button" id="pwToggle" aria-controls="password" aria-pressed="false">Show</button></span></label>
-          <div id="captchaBox" class="cap" hidden></div>
           <p class="err" id="authErr" role="alert"></p>
           <button type="submit" class="pill wide" id="authBtn">Log in</button>
           <button type="button" class="linkish" id="forgotBtn">Forgot your password?</button>
           <p class="fine" id="signupFine" hidden>By creating an account you agree to our <a href="/terms.html">Terms</a> and <a href="/privacy.html">Privacy Policy</a>.</p>
-          <p class="fine">Protected by reCAPTCHA. Google <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Terms</a> apply.</p>
         </form>
 
-        <form id="codeForm" class="stack" novalidate hidden>
-          <p class="ok-note">We emailed you a verification code. Enter it to finish creating your account.</p>
-          <label class="f" for="code"><span>Verification code</span><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" required></label>
-          <p class="err" id="codeErr" role="alert"></p>
-          <button type="submit" class="pill wide" id="codeBtn">Verify and continue</button>
-        </form>
-
-        <div id="pending" class="stack" hidden>
-          <p class="ok-note">Your account has been created and is waiting for approval from Gleam. You'll be able to log in once it's approved.</p>
-          <a class="ghost" href="/">Back to Gleam</a>
+        <div id="checkEmail" class="stack" hidden>
+          <p class="ok-note" id="checkEmailText">Check your email. We sent you a link to confirm your account.</p>
+          <button type="button" class="linkish" id="checkBack">Back to log in</button>
         </div>
+
+        <form id="newPwForm" class="stack" novalidate hidden>
+          <p class="ok-note">Choose a new password for your Gleam account.</p>
+          <label class="f" for="newPw"><span>New password</span><input id="newPw" type="password" autocomplete="new-password" maxlength="100" required></label>
+          <p class="err" id="newPwErr" role="alert"></p>
+          <button type="submit" class="pill wide" id="newPwBtn">Save new password</button>
+        </form>
 
         <form id="resetForm" class="stack" novalidate hidden>
           <p class="ok-note" id="resetIntro">Enter your account email and we'll send you a link to set a new password.</p>
@@ -160,7 +163,7 @@
   </div>
 </main>
 <script type="module">
-import { subscribeMember, getMemberState, login, register, verifyEmail, logout, wixRequest, WIX_CLIENT_ID } from '/js/gleam-auth.js';
+import { subscribeMember, getMemberState, login, register, loginWithGoogle, sendPasswordReset, updatePassword, onPasswordRecovery, logout, api } from '/js/gleam-auth.js';
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const rt = params.get('returnTo') || '';
@@ -168,59 +171,28 @@ const rt = params.get('returnTo') || '';
 const returnTo = (() => { try { const u = new URL(rt || '/', location.origin); if (u.origin === location.origin && !u.pathname.startsWith('/login')) return u.pathname + u.search + u.hash; } catch (x) {} return '/'; })();
 let mode = params.get('mode') === 'signup' ? 'up' : 'in';
 let busy = false;
+let recovering = params.get('reset') === '1';
+const urlError = params.get('error_description') || '';
 
 const MSG = {
-  invalidPassword: 'That email and password don’t match. Try again, or reset your password.',
-  invalidEmail: 'That email and password don’t match. Try again, reset your password, or create an account.',
+  invalidPassword: 'That email and password don’t match. Try again, reset your password, or create an account.',
+  emailNotConfirmed: 'Confirm your email first: open the link we sent you, then log in.',
   emailAlreadyExists: 'An account with that email already exists. Log in instead.',
-  resetPassword: 'You need to set a new password before logging in. We can email you a link.',
-  missingCaptchaToken: 'Tick “I’m not a robot” above, then press the button again.',
-  invalidCaptchaToken: 'The security check expired. Tick “I’m not a robot” again, then press the button.',
-  needCheck: 'Tick “I’m not a robot” above first.',
-  captchaLoad: 'The security check didn’t load. Turn off any ad or script blocker for this page and try again.'
+  weakPassword: 'Pick a stronger password: at least 8 characters, not a common one.',
+  badEmail: 'That email address doesn’t look right. Check it and try again.',
+  tooMany: 'Too many tries. Wait a few minutes, then try again.',
+  generic: 'Something went wrong. Try again.'
 };
-const CAP_VIS = '6Ld0J8IcAAAAANyrnxzrRlX1xrrdXsOmsepUYosy';
-let capLoad = null, capWidget = null, capVisible = false;
-function loadCap(){
-  return capLoad ||= new Promise((res, rej) => {
-    const sc = document.createElement('script');
-    sc.src = 'https://www.google.com/recaptcha/enterprise.js?render=explicit'; sc.async = true;
-    sc.onload = () => grecaptcha.enterprise.ready(res);
-    sc.onerror = () => { capLoad = null; rej(new Error('captcha')); };
-    document.head.appendChild(sc);
-    setTimeout(() => rej(new Error('captcha')), 15000);
-  });
-}
-async function capTokens(action){
-  if (capVisible) { const t = grecaptcha.enterprise.getResponse(capWidget); return t ? [{ Recaptcha: t }] : null; }
-  return [];
-}
-async function showVisibleCap(){
-  try {
-    await loadCap(); $('captchaBox').hidden = false;
-    if (capWidget === null) capWidget = grecaptcha.enterprise.render('captchaBox', { sitekey: CAP_VIS });
-    else grecaptcha.enterprise.reset(capWidget);
-    capVisible = true; return true;
-  } catch (e) { return false; }
-}
-async function withCap(action, fn){
-  const ct = await capTokens(action);
-  if (ct === null) return { state: 'FAILURE', errorCode: 'needCheck' };
-  return fn({ captchaTokens: ct });
-}
 // ZIP from sign-up goes to the member's private profile once they're logged in
 async function syncProfile(){
   const work = (async () => {
     let pending = null; try { pending = JSON.parse(localStorage.getItem('gleam-pending-profile') || 'null'); } catch (x) {}
-    const q = await wixRequest('/wix-data/v2/items/query', { body: { dataCollectionId: 'MemberProfiles', query: { sort: [{ fieldName: '_updatedDate', order: 'DESC' }], paging: { limit: 1 } } } });
-    const it = q && q.dataItems && q.dataItems[0];
+    const p = await api('/api/profile');
     if (pending && /^\d{5}$/.test(pending.zip || '')) {
-      const data = { zip: pending.zip, address: (it && it.data && it.data.address) || '' };
-      if (it) await wixRequest('/wix-data/v2/items/' + it.id, { method: 'PUT', body: { dataCollectionId: 'MemberProfiles', dataItem: { id: it.id, data } } });
-      else await wixRequest('/wix-data/v2/items', { body: { dataCollectionId: 'MemberProfiles', dataItem: { data } } });
-      try { localStorage.removeItem('gleam-pending-profile'); localStorage.setItem('gleam-address', data.address); } catch (x) {}
-    } else if (it && it.data && /^\d{5}$/.test(it.data.zip || '')) {
-      try { localStorage.setItem('gleam-zip', it.data.zip); localStorage.setItem('gleam-address', it.data.address || ''); } catch (x) {}
+      const saved = await api('/api/profile', { method: 'PUT', body: { zip: pending.zip, address: p.address || '' } });
+      try { localStorage.removeItem('gleam-pending-profile'); localStorage.setItem('gleam-zip', saved.zip); localStorage.setItem('gleam-address', saved.address || ''); } catch (x) {}
+    } else if (/^\d{5}$/.test(p.zip || '')) {
+      try { localStorage.setItem('gleam-zip', p.zip); localStorage.setItem('gleam-address', p.address || ''); } catch (x) {}
     } else {
       // nothing saved for this account: don't carry over an address left on this device by someone else
       try { localStorage.removeItem('gleam-zip'); localStorage.removeItem('gleam-address'); } catch (x) {}
@@ -228,7 +200,7 @@ async function syncProfile(){
   })();
   return Promise.race([work.catch(() => {}), new Promise(r => setTimeout(r, 6000))]);
 }
-function show(id){ for (const x of ['authForm','codeForm','pending','resetForm']) $(x).hidden = x !== id; }
+function show(id){ for (const x of ['authForm','checkEmail','resetForm','newPwForm']) $(x).hidden = x !== id; }
 function setMode(m){
   mode = m;
   $('tabIn').setAttribute('aria-selected', String(m === 'in'));
@@ -242,11 +214,10 @@ function setMode(m){
   $('password').autocomplete = m === 'in' ? 'current-password' : 'new-password';
   $('authErr').textContent = '';
   show('authForm');
-  if (m === 'up') showVisibleCap().then(ok => { if (!ok && mode === 'up') $('authErr').textContent = MSG.captchaLoad; });
-  else { $('captchaBox').hidden = true; capVisible = false; }
 }
 $('tabIn').addEventListener('click', () => setMode('in'));
 $('tabUp').addEventListener('click', () => setMode('up'));
+$('checkBack').addEventListener('click', () => setMode('in'));
 $('pwToggle').addEventListener('click', () => {
   const on = $('password').type === 'password';
   $('password').type = on ? 'text' : 'password';
@@ -254,45 +225,39 @@ $('pwToggle').addEventListener('click', () => {
   $('pwToggle').setAttribute('aria-pressed', String(on));
 });
 
-function handle(result, errEl){
-  if (!result) return;
-  if (result.state === 'SUCCESS') { syncProfile().finally(() => location.assign(returnTo)); return; }
-  if (result.state === 'EMAIL_VERIFICATION_REQUIRED') { show('codeForm'); $('code').focus(); return; }
-  if (result.state === 'OWNER_APPROVAL_REQUIRED') { show('pending'); return; }
-  if (result.errorCode === 'missingCaptchaToken' || result.errorCode === 'invalidCaptchaToken') {
-    showVisibleCap().then(ok => { errEl.textContent = ok ? MSG[result.errorCode] : MSG.captchaLoad; });
-    return;
-  }
-  errEl.textContent = MSG[result.errorCode] || result.error || 'Something went wrong. Try again.';
-  if (result.errorCode === 'resetPassword') openReset();
-}
 async function run(btn, label, fn, errEl){
-  if (busy) return; busy = true; btn.disabled = true; const old = btn.textContent; btn.textContent = label; errEl.textContent = '';
-  try { handle(await fn(), errEl); }
-  catch (e) { errEl.textContent = 'We couldn’t reach the login service. Check your connection and try again.'; }
-  finally { busy = false; btn.disabled = false; btn.textContent = old; }
+  if (busy) return; busy = true; btn.disabled = true; const old = btn.innerHTML; btn.textContent = label; errEl.textContent = '';
+  let keepBusy = false;
+  try {
+    const r = await fn();
+    if (r && r.ok && r.checkEmail) { $('checkEmailText').textContent = 'Check your email. We sent a link to ' + $('email').value.trim() + ' to confirm your account. Open it on this device to finish signing up (check spam too).'; $('authTitle').textContent = 'Confirm your email'; show('checkEmail'); }
+    else if (r && r.ok) { keepBusy = true; if (r.done !== false) syncProfile().finally(() => location.assign(returnTo)); }
+    else { errEl.textContent = MSG[r && r.errorCode] || MSG.generic; if (r && r.errorCode === 'emailAlreadyExists') setTimeout(() => { setMode('in'); $('authErr').textContent = MSG.emailAlreadyExists; }, 0); }
+  } catch (e) { errEl.textContent = 'We couldn’t reach the login service. Check your connection and try again.'; }
+  finally { if (!keepBusy) { busy = false; btn.disabled = false; btn.innerHTML = old; } }
 }
+$('googleBtn').addEventListener('click', () => {
+  // the ZIP typed on the sign-up tab (if any) is saved after Google sends them back
+  const zip = $('zip').value.trim();
+  if (mode === 'up' && /^\d{5}$/.test(zip)) { try { localStorage.setItem('gleam-pending-profile', JSON.stringify({ zip })); localStorage.setItem('gleam-zip', zip); } catch (x) {} }
+  run($('googleBtn'), 'Opening Google…', async () => { const r = await loginWithGoogle(returnTo); return r.ok ? { ok: true, done: false } : r; }, $('authErr'));
+});
 $('authForm').addEventListener('submit', e => {
   e.preventDefault();
   const email = $('email').value.trim(), pw = $('password').value;
   if (!/^\S+@\S+\.\S+$/.test(email)) { $('authErr').textContent = 'Enter your email address.'; $('email').focus(); return; }
   if (!pw) { $('authErr').textContent = 'Enter your password.'; $('password').focus(); return; }
-  if (mode === 'in') { try { localStorage.removeItem('gleam-pending-profile'); } catch (x) {} }
-  if (mode === 'in') run($('authBtn'), 'Logging in…', () => withCap('login', o => login(email, pw, o)), $('authErr'));
-  else {
+  if (mode === 'in') {
+    try { localStorage.removeItem('gleam-pending-profile'); } catch (x) {}
+    run($('authBtn'), 'Logging in…', () => login(email, pw), $('authErr'));
+  } else {
     const zip = $('zip').value.trim();
     if (!/^\d{5}$/.test(zip)) { $('authErr').textContent = 'Enter your 5-digit ZIP code.'; $('zip').focus(); return; }
-    try { localStorage.setItem('gleam-pending-profile', JSON.stringify({ zip })); localStorage.setItem('gleam-zip', zip); } catch (x) {}
     if (pw.length < 8) { $('authErr').textContent = 'Use at least 8 characters for your password.'; $('password').focus(); return; }
-    const profile = { firstName: $('firstName').value.trim() || undefined, lastName: $('lastName').value.trim() || undefined };
-    run($('authBtn'), 'Creating account…', () => withCap('signup', o => register(email, pw, profile, o)), $('authErr'));
+    try { localStorage.setItem('gleam-pending-profile', JSON.stringify({ zip })); localStorage.setItem('gleam-zip', zip); } catch (x) {}
+    const profile = { firstName: $('firstName').value.trim(), lastName: $('lastName').value.trim() };
+    run($('authBtn'), 'Creating account…', () => register(email, pw, profile, returnTo), $('authErr'));
   }
-});
-$('codeForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const code = $('code').value.trim();
-  if (!code) { $('codeErr').textContent = 'Enter the code from the email.'; return; }
-  run($('codeBtn'), 'Checking…', () => verifyEmail(code), $('codeErr'));
 });
 
 function openReset(){ $('resetEmail').value = $('email').value.trim(); $('resetErr').textContent = ''; $('resetIntro').textContent = 'Enter your account email and we’ll send you a link to set a new password.'; $('resetBtn').hidden = false; $('resetEmail').disabled = false; $('authTitle').textContent = 'Reset your password'; show('resetForm'); $('resetEmail').focus(); }
@@ -304,35 +269,48 @@ $('resetForm').addEventListener('submit', async e => {
   if (!/^\S+@\S+\.\S+$/.test(email)) { $('resetErr').textContent = 'Enter your email address.'; return; }
   if (busy) return; busy = true; $('resetBtn').disabled = true; $('resetErr').textContent = '';
   try {
-    await wixRequest('/_api/iam/recovery/v1/send-email', { body: { email, redirect: { url: location.origin + '/login.html', clientId: WIX_CLIENT_ID } } });
-    $('resetIntro').textContent = 'If there’s a Gleam account for ' + email + ', we’ve emailed a link to set a new password. It can take a few minutes; check your spam folder too.';
+    const r = await sendPasswordReset(email);
+    if (!r.ok && r.errorCode === 'tooMany') { $('resetErr').textContent = MSG.tooMany; return; }
+    $('resetIntro').textContent = 'If there’s a Gleam account for ' + email + ', we’ve emailed a link to set a new password. Open it on this device. It can take a few minutes; check your spam folder too.';
     $('resetBtn').hidden = true; $('resetEmail').disabled = true;
   } catch (x) {
     $('resetErr').textContent = 'We couldn’t send the reset email right now. Try again in a few minutes.';
   } finally { busy = false; $('resetBtn').disabled = false; }
 });
-$('logoutBtn').addEventListener('click', () => { $('logoutBtn').disabled = true; logout('/login.html').catch(() => { $('logoutBtn').disabled = false; }); });
+$('newPwForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const pw = $('newPw').value;
+  if (pw.length < 8) { $('newPwErr').textContent = 'Use at least 8 characters for your password.'; return; }
+  run($('newPwBtn'), 'Saving…', async () => { const r = await updatePassword(pw); if (r.ok) recovering = false; return r; }, $('newPwErr'));
+});
+onPasswordRecovery(() => { recovering = true; render(); });
+$('logoutBtn').addEventListener('click', () => { $('logoutBtn').disabled = true; logout('/login.html'); });
 
 function render(){
   const s = getMemberState();
   $('authLoading').hidden = !s.loading;
   if (s.loading) { $('authPanel').hidden = true; $('signedIn').hidden = true; return; }
-  if (s.loggedIn && !busy && params.has('returnTo')) {
-    // guard: never bounce between pages more than a few times
-    let n = []; try { n = JSON.parse(sessionStorage.getItem('gleam-bounce') || '[]').filter(t => Date.now() - t < 20000); n.push(Date.now()); sessionStorage.setItem('gleam-bounce', JSON.stringify(n)); } catch (x) {}
-    if (n.length <= 3) { location.replace(returnTo); return; }
-  }
-  if (s.loggedIn && !busy) {
-    $('authPanel').hidden = true; $('signedIn').hidden = false;
-    const who = s.member && (s.member.loginEmail || s.member.displayName);
-    $('signedInText').textContent = who ? 'You’re logged in as ' + who + '.' : 'You’re logged in.';
+  if (recovering && s.member) {
+    $('signedIn').hidden = true; $('authPanel').hidden = false; $('authTitle').textContent = 'Set a new password';
+    document.querySelector('.tabs').hidden = true; if ($('newPwForm').hidden) { show('newPwForm'); $('newPw').focus(); }
     return;
   }
-  $('signedIn').hidden = true; $('authPanel').hidden = false;
+  document.querySelector('.tabs').hidden = false;
+  if (s.member && !busy && (params.has('returnTo') || params.has('code'))) {
+    // guard: never bounce between pages more than a few times
+    let n = []; try { n = JSON.parse(sessionStorage.getItem('gleam-bounce') || '[]').filter(t => Date.now() - t < 20000); n.push(Date.now()); sessionStorage.setItem('gleam-bounce', JSON.stringify(n)); } catch (x) {}
+    if (n.length <= 3) { busy = true; syncProfile().finally(() => location.replace(returnTo)); return; }
+  }
+  if (s.member && !busy) {
+    $('authPanel').hidden = true; $('signedIn').hidden = false;
+    $('signedInText').textContent = s.member.loginEmail ? 'You’re logged in as ' + s.member.loginEmail + '.' : 'You’re logged in.';
+    return;
+  }
+  if (!s.member) { $('signedIn').hidden = true; $('authPanel').hidden = false; }
 }
 setMode(mode);
+if (urlError) $('authErr').textContent = /expired|invalid/i.test(urlError) ? 'That link has expired or was already used. Log in, or ask for a new one.' : 'Sign-in didn’t finish: ' + urlError.slice(0, 120);
 subscribeMember(render);
-render();
 </script>
 
 

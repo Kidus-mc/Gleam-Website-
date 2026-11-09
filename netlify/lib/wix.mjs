@@ -32,17 +32,19 @@ export async function wixAdmin(path, body, method = 'POST') {
   return d;
 }
 
-// Who is calling? Asks Wix to confirm the member's own login token.
+// Supabase handles Gleam logins. These two values are public (they're also in the pages).
+export const SUPABASE_URL = 'https://huskusxmuyxiucufcmkv.supabase.co';
+export const SUPABASE_KEY = 'sb_publishable_rsLVPdoFlMhH4_k4khm4MA_YW25zBRS';
+
+// Who is calling? Asks Supabase to confirm the person's own login token.
 export async function memberFrom(req) {
-  const token = req.headers.get('authorization') || '';
-  if (!token || token.length > 4000) throw fail(401, 'login_required');
-  const r = await fetch(WIX + '/members/v1/members/my', { headers: { Authorization: token } });
+  const raw = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!raw || raw.length > 4000) throw fail(401, 'login_required');
+  const r = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + raw } });
   if (!r.ok) throw fail(401, 'login_required');
-  const d = await r.json().catch(() => null);
-  const m = d && d.member;
-  const id = m && (m.id || m._id);
-  if (!id) throw fail(401, 'login_required');
-  return { id, email: m.loginEmail || '' };
+  const u = await r.json().catch(() => null);
+  if (!u || !u.id) throw fail(401, 'login_required');
+  return { id: u.id, email: String(u.email || '').toLowerCase() };
 }
 
 // Only accept calls made from Gleam's own pages.

@@ -1,449 +1,145 @@
-// Gleam member login (Wix Headless).
-// Used by login.html and account.html:
-//   import { subscribeMember, getMemberState, login, register, verifyEmail, logout, wixRequest, WIX_CLIENT_ID } from '/js/gleam-auth.js';
-// Readable source: no build step. Edit this file directly.
+// Gleam member login (Supabase Auth). Gleam's data (bookings, detailers, profiles) stays in Wix,
+// reached only through Gleam's own /api/* server functions, which check this login.
+// Used by login.html, account.html, index.html and detailers.html. Readable source: no build step.
 
-// ---------------------------------------------------------------------------
-// Config
-// ---------------------------------------------------------------------------
+import { AuthClient } from '/js/vendor/supabase-auth.js';
 
-// Gleam's public Wix client ID (safe to show; the secret lives only on Netlify).
-export const WIX_CLIENT_ID = "ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b";
-
-const WIX_API_BASE = "https://www.wixapis.com";
-const TOKEN_URL = `${WIX_API_BASE}/oauth2/token`;
-const STORAGE_KEY = `wix-visitor-${WIX_CLIENT_ID}`;
+// Public values (safe to show): the project address and its publishable key.
+export const SUPABASE_URL = 'https://huskusxmuyxiucufcmkv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_rsLVPdoFlMhH4_k4khm4MA_YW25zBRS';
+export const STORAGE_KEY = 'sb-huskusxmuyxiucufcmkv-auth-token';
 // Things saved on this device for the logged-in person; wiped on logout.
-const PERSONAL_KEYS = ["gleam-zip", "gleam-address", "gleam-pending-profile"];
+const PERSONAL_KEYS = ['gleam-zip', 'gleam-address', 'gleam-pending-profile', 'wix-visitor-ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b'];
 
-// ---------------------------------------------------------------------------
-// Login tokens: kept in localStorage, mirrored into the "gleam_at" cookie so
-// Netlify's server-side login wall can check members before sending a page.
-// ---------------------------------------------------------------------------
+const auth = new AuthClient({
+  url: SUPABASE_URL + '/auth/v1',
+  headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY },
+  storageKey: STORAGE_KEY,
+  persistSession: true,
+  autoRefreshToken: true,
+  detectSessionInUrl: true,
+  flowType: 'pkce',
+});
 
-let memory = null;
-
-function syncLoginCookie(tokens) {
+// The login is mirrored into the "gleam_at" cookie so Netlify's login wall can check it before sending a page.
+function syncLoginCookie(session) {
   try {
-    if (typeof document === "undefined")
-      return;
-    if (tokens && tokens.role === "member" && tokens.accessToken) {
-      const maxAge = Math.max(0, Math.floor((tokens.expiresAt - Date.now()) / 1e3));
-      document.cookie = "gleam_at=" + encodeURIComponent(tokens.accessToken) + ";path=/;max-age=" + maxAge + ";secure;samesite=lax";
+    if (session && session.access_token) {
+      const maxAge = Math.max(0, Math.floor((session.expires_at || 0) - Date.now() / 1000));
+      document.cookie = 'gleam_at=' + encodeURIComponent(session.access_token) + ';path=/;max-age=' + maxAge + ';secure;samesite=lax';
     } else {
-      document.cookie = "gleam_at=;path=/;max-age=0;secure;samesite=lax";
+      document.cookie = 'gleam_at=;path=/;max-age=0;secure;samesite=lax';
     }
-  } catch {
-  }
+  } catch {}
 }
 
-const store = {
-  load() {
-    if (memory)
-      return memory;
-    if (typeof localStorage === "undefined")
-      return null;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw)
-        memory = JSON.parse(raw);
-    } catch {
-    }
-    return memory;
-  },
-  save(tokens) {
-    memory = tokens;
-    syncLoginCookie(tokens);
-    if (typeof localStorage === "undefined")
-      return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
-    } catch {
-    }
-  }
-};
-
-// Keep the cookie in step with whatever login is already on this device.
-try {
-  syncLoginCookie(store.load());
-} catch {
-}
-
-async function mintTokens(body, role = "visitor") {
-  const res = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ clientId: WIX_CLIENT_ID, ...body })
-  });
-  if (!res.ok)
-    throw new Error(`Wix auth failed (${res.status}).`);
-  const data = await res.json();
-  return { accessToken: data.access_token, refreshToken: data.refresh_token, expiresAt: Date.now() + data.expires_in * 1e3, role };
-}
-
-function clearTokens() {
-  try {
-    PERSONAL_KEYS.forEach((k) => localStorage.removeItem(k));
-  } catch {
-  }
-  store.save({ accessToken: "", refreshToken: "", expiresAt: 0 });
-}
-
-// A valid access token: reuse it, refresh it, or start a visitor session.
-async function accessToken() {
-  const t = store.load();
-  if (t && t.expiresAt - 6e4 > Date.now())
-    return t.accessToken;
-  let fresh;
-  if (t?.refreshToken) {
-    try {
-      fresh = await mintTokens({ grantType: "refresh_token", refreshToken: t.refreshToken }, t.role ?? "visitor");
-    } catch {
-    }
-  }
-  fresh ?? (fresh = await mintTokens({ grantType: "anonymous" }));
-  store.save(fresh);
-  return fresh.accessToken;
-}
-
-// ---------------------------------------------------------------------------
-// Calling Wix (or Gleam's own /api) with the current login
-// ---------------------------------------------------------------------------
-
-class WixApiError extends Error {
-  constructor(message, status, code, details) {
-    super(message);
-    this.status = status;
-    this.code = code;
-    // The response's `details` as Wix sent it (applicationError, validationError).
-    this.details = details;
-  }
-}
-
-export async function wixRequest(path, { method = "POST", body, query } = {}) {
-  const url = new URL(path, WIX_API_BASE);
-  for (const [k, v] of Object.entries(query ?? {})) {
-    for (const item of Array.isArray(v) ? v : [v])
-      url.searchParams.append(k, String(item));
-  }
-  const res = await fetch(url, {
-    method,
-    headers: { Authorization: await accessToken(), "Content-Type": "application/json" },
-    body: body === void 0 ? void 0 : JSON.stringify(body)
-  });
-  if (!res.ok) {
-    let message = "", code, details;
-    try {
-      const j = await res.json();
-      message = j?.message ?? "";
-      code = j?.details?.applicationError?.code;
-      details = j?.details;
-    } catch {
-    }
-    throw new WixApiError(message || `${method} ${url.pathname} failed (${res.status}).`, res.status, code, details);
-  }
-  return res.status === 204 ? null : await res.json();
-}
-
-// ---------------------------------------------------------------------------
-// The logged-in member
-// ---------------------------------------------------------------------------
-
-async function fetchCurrentMember() {
-  try {
-    const res = await wixRequest("/members/v1/members/my", { method: "GET", query: { fieldsets: ["FULL"] } });
-    const raw = res?.member;
-    const id = raw?._id ?? raw?.id ?? "";
-    if (!raw || !id)
-      return null;
-    const nickname = raw.profile?.nickname ?? "";
-    const firstName = raw.contact?.firstName ?? "";
-    const lastName = raw.contact?.lastName ?? "";
-    const loginEmail = raw.loginEmail ?? "";
-    const fullName = [firstName, lastName].filter(Boolean).join(" ");
-    const created = raw._createdDate ?? raw.createdDate;
-    return {
-      id,
-      loginEmail,
-      displayName: nickname || fullName || loginEmail.split("@")[0] || "Member",
-      firstName,
-      lastName,
-      nickname,
-      contactId: raw.contactId ?? "",
-      memberSince: created ? new Date(created).toISOString().slice(0, 10) : ""
-    };
-  } catch {
-    return null;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Log in, sign up, verify email, log out
-// ---------------------------------------------------------------------------
-
-const REDIRECT_SESSION = "/headless/v1/redirect-session";
-const REST_STATES = {
-  SUCCESS: "SUCCESS",
-  REQUIRE_EMAIL_VERIFICATION: "EMAIL_VERIFICATION_REQUIRED",
-  REQUIRE_OWNER_APPROVAL: "OWNER_APPROVAL_REQUIRED"
-};
-const NO_SESSION_ERROR = "Wix did not return a member session.";
-const AUTH_ERROR_CODES = {
-  MISSING_CAPTCHA: "-19971",
-  INVALID_CAPTCHA: "-19970",
-  EMAIL_EXISTS: "-19995",
-  INVALID_PASSWORD: "-19976",
-  RESET_PASSWORD: "-19973"
-};
-let pendingStateToken = null;
-
-const failure = (error, errorCode) => ({ state: "FAILURE", error, ...errorCode ? { errorCode } : {} });
-const message = (e) => e instanceof Error ? e.message : String(e);
-// "I'm not a robot" answers, when the page has them.
-const captcha = (options) => options.captchaTokens?.length ? { captcha_tokens: options.captchaTokens } : {};
-
-function loginErrorCode(code) {
-  switch (code) {
-    case AUTH_ERROR_CODES.MISSING_CAPTCHA:
-      return "missingCaptchaToken";
-    case AUTH_ERROR_CODES.INVALID_CAPTCHA:
-      return "invalidCaptchaToken";
-    case AUTH_ERROR_CODES.INVALID_PASSWORD:
-      return "invalidPassword";
-    case AUTH_ERROR_CODES.RESET_PASSWORD:
-      return "resetPassword";
-    default:
-      return "invalidEmail";
-  }
-}
-
-function registerErrorCode(code, details) {
-  const violations = details?.validationError?.fieldViolations ?? [];
-  if (violations.some((v) => v?.data?.type === "EMAIL"))
-    return "invalidEmail";
-  switch (code) {
-    case AUTH_ERROR_CODES.MISSING_CAPTCHA:
-      return "missingCaptchaToken";
-    case AUTH_ERROR_CODES.EMAIL_EXISTS:
-      return "emailAlreadyExists";
-    case AUTH_ERROR_CODES.INVALID_CAPTCHA:
-      return "invalidCaptchaToken";
-    default:
-      return void 0;
-  }
-}
-
-// Turns a Wix login/sign-up/verify answer into a result for the page.
-async function finish(raw) {
-  const state = raw?.loginState ?? REST_STATES[raw?.state ?? ""] ?? "FAILURE";
-  const stateToken = raw?.stateToken ?? raw?.data?.stateToken;
-  const sessionToken = raw?.data?.sessionToken ?? raw?.sessionToken ?? null;
-  if (state === "SUCCESS") {
-    pendingStateToken = null;
-    if (!sessionToken)
-      return failure(NO_SESSION_ERROR);
-    store.save(await memberTokensForSession(sessionToken));
-    return { state: "SUCCESS" };
-  }
-  if (stateToken)
-    pendingStateToken = stateToken;
+function toMember(user) {
+  if (!user) return null;
+  const meta = user.user_metadata || {};
+  const full = meta.first_name || meta.full_name || meta.name || '';
   return {
-    state,
-    ...stateToken ? { stateToken } : {},
-    ...raw?.errorCode ? { errorCode: raw.errorCode } : {},
-    ...raw?.error ? { error: raw.error } : {}
+    id: user.id,
+    loginEmail: user.email || '',
+    firstName: String(full).trim().split(/\s+/)[0] || '',
+    memberSince: user.created_at || null,
   };
 }
 
-async function loginMember(email, password, options = {}) {
-  let raw;
-  try {
-    raw = await wixRequest("/_api/iam/authentication/v2/login", { body: { loginId: { email }, password, ...captcha(options) } });
-  } catch (e) {
-    return failure(message(e), e instanceof WixApiError ? loginErrorCode(e.code) : void 0);
-  }
-  return finish(raw);
-}
-
-async function registerMember(email, password, profile, options = {}) {
-  let raw;
-  try {
-    raw = await wixRequest("/_api/iam/authentication/v2/register", {
-      body: { loginId: { email }, password, ...profile ? { profile } : {}, ...captcha(options) }
-    });
-  } catch (e) {
-    return failure(message(e), e instanceof WixApiError ? registerErrorCode(e.code, e.details) : void 0);
-  }
-  return finish(raw);
-}
-
-async function verifyMemberEmail(verificationCode) {
-  if (!pendingStateToken)
-    return failure("No sign-in is waiting for a verification code.");
-  let raw;
-  try {
-    raw = await wixRequest("/_api/iam/verification/v1/auth/verify", { body: { code: verificationCode, stateToken: pendingStateToken } });
-  } catch (e) {
-    return failure(message(e));
-  }
-  return finish(raw);
-}
-
-async function logoutMember(returnTo = "/") {
-  const target = new URL(returnTo, window.location.origin).href;
-  const res = await wixRequest(REDIRECT_SESSION, { body: { logout: { clientId: WIX_CLIENT_ID }, callbacks: { postFlowUrl: target } } });
-  const url = res?.redirectSession?.fullUrl;
-  if (!url)
-    throw new Error("Logout couldn't start: no redirect URL returned.");
-  clearTokens();
-  window.location.assign(url);
-}
-
-// Swaps a one-time Wix session token for member login tokens (PKCE, in a hidden frame).
-async function memberTokensForSession(sessionToken) {
-  const { verifier, challenge } = await pkce();
-  const state = randomString();
-  const res = await wixRequest(REDIRECT_SESSION, {
-    body: {
-      auth: {
-        authRequest: {
-          clientId: WIX_CLIENT_ID,
-          codeChallenge: challenge,
-          codeChallengeMethod: "S256",
-          responseMode: "web_message",
-          responseType: "code",
-          scope: "offline_access",
-          state,
-          sessionToken
-        },
-        prompt: "none"
-      }
-    }
-  });
-  const url = res?.redirectSession?.fullUrl;
-  if (!url)
-    throw new Error("Login couldn't finish: no authorization URL returned.");
-  const code = await authorizationCode(url, state);
-  return mintTokens({ grantType: "authorization_code", code, codeVerifier: verifier }, "member");
-}
-
-function authorizationCode(url, state) {
-  return new Promise((resolve, reject) => {
-    const frame = document.createElement("iframe");
-    frame.style.display = "none";
-    const done = () => {
-      window.removeEventListener("message", onMessage);
-      clearTimeout(timer);
-      frame.remove();
-    };
-    const onMessage = (e) => {
-      const data = e.data;
-      if (!data || data.state !== state)
-        return;
-      done();
-      if (data.error)
-        reject(new Error(`Login was refused: ${data.error}`));
-      else if (data.code)
-        resolve(data.code);
-      else
-        reject(new Error("Login couldn't finish: no authorization code."));
-    };
-    const timer = setTimeout(() => {
-      done();
-      reject(new Error("Login timed out. Is this page's origin on the OAuth app's allowed domains?"));
-    }, 12e4);
-    window.addEventListener("message", onMessage);
-    frame.src = url;
-    document.body.appendChild(frame);
-  });
-}
-
-function base64url(bytes) {
-  let s = "";
-  for (const b of bytes)
-    s += String.fromCharCode(b);
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function randomString() {
-  return base64url(crypto.getRandomValues(new Uint8Array(32)));
-}
-
-async function pkce() {
-  const verifier = randomString();
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
-  return { verifier, challenge: base64url(new Uint8Array(digest)) };
-}
-
-// ---------------------------------------------------------------------------
-// Member state the pages subscribe to
-// ---------------------------------------------------------------------------
-
-let state = { member: null, loggedIn: false, loading: true, error: null };
+let state = { loading: true, member: null };
 const listeners = new Set();
-let started = false;
+const recoveryHandlers = [];
+function setState(next) { state = next; listeners.forEach(fn => { try { fn(state); } catch {} }); }
 
-function setState(patch) {
-  state = { ...state, ...patch };
-  for (const l of listeners)
-    l();
+auth.onAuthStateChange((event, session) => {
+  syncLoginCookie(session);
+  if (event === 'PASSWORD_RECOVERY') recoveryHandlers.forEach(fn => { try { fn(); } catch {} });
+  setState({ loading: false, member: toMember(session && session.user) });
+});
+
+const ready = auth.getSession().then(({ data }) => {
+  syncLoginCookie(data.session);
+  setState({ loading: false, member: toMember(data.session && data.session.user) });
+}).catch(() => setState({ loading: false, member: null }));
+
+export function getMemberState() { return state; }
+export function subscribeMember(fn) { listeners.add(fn); fn(state); return () => listeners.delete(fn); }
+export function onPasswordRecovery(fn) { recoveryHandlers.push(fn); }
+
+function friendly(error) {
+  if (!error) return null;
+  const code = error.code || '';
+  if (error.status === 429 || /rate|too many/i.test(code + ' ' + error.message)) return 'tooMany';
+  if (code === 'invalid_credentials') return 'invalidPassword';
+  if (code === 'email_not_confirmed') return 'emailNotConfirmed';
+  if (code === 'user_already_exists' || code === 'email_exists') return 'emailAlreadyExists';
+  if (code === 'weak_password') return 'weakPassword';
+  if (code === 'email_address_invalid' || code === 'validation_failed') return 'badEmail';
+  return 'generic';
 }
 
-export function getMemberState() {
-  return state;
+export async function login(email, password) {
+  await ready;
+  const { error } = await auth.signInWithPassword({ email, password });
+  return error ? { ok: false, errorCode: friendly(error) } : { ok: true };
 }
 
-export function subscribeMember(listener) {
-  listeners.add(listener);
-  if (!started && typeof window !== "undefined") {
-    started = true;
-    void refreshMember();
-  }
-  return () => listeners.delete(listener);
+// { ok:true } when logged in straight away, { ok:true, checkEmail:true } when Supabase sent a confirmation link.
+export async function register(email, password, profile = {}, returnTo = '/') {
+  await ready;
+  const { data, error } = await auth.signUp({
+    email, password,
+    options: {
+      emailRedirectTo: location.origin + '/login.html?returnTo=' + encodeURIComponent(returnTo),
+      data: { first_name: profile.firstName || '', last_name: profile.lastName || '' },
+    },
+  });
+  if (error) return { ok: false, errorCode: friendly(error) };
+  // Supabase hides whether an email is taken: a known address comes back with no identities.
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) return { ok: false, errorCode: 'emailAlreadyExists' };
+  return data.session ? { ok: true } : { ok: true, checkEmail: true };
 }
 
-async function refreshMember() {
-  setState({ loading: true, error: null });
-  if (store.load()?.role !== "member") {
-    setState({ member: null, loggedIn: false, loading: false });
-    return;
-  }
-  const member = await fetchCurrentMember();
-  setState({ member, loggedIn: true, loading: false });
+export async function loginWithGoogle(returnTo = '/') {
+  await ready;
+  const { error } = await auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: location.origin + '/login.html?returnTo=' + encodeURIComponent(returnTo) },
+  });
+  return error ? { ok: false, errorCode: friendly(error) } : { ok: true };
 }
 
-async function runLogin(action) {
-  try {
-    const result = await action();
-    if (result.state === "SUCCESS")
-      await refreshMember();
-    if (result.state === "FAILURE")
-      setState({ error: result.error ?? result.errorCode ?? "Could not log in." });
-    return result;
-  } catch (e) {
-    setState({ error: e instanceof Error ? e.message : String(e) });
-    throw e;
-  }
+export async function sendPasswordReset(email) {
+  await ready;
+  const { error } = await auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/login.html?reset=1' });
+  return error ? { ok: false, errorCode: friendly(error) } : { ok: true };
 }
 
-export function login(email, password, options) {
-  return runLogin(() => loginMember(email, password, options));
+export async function updatePassword(password) {
+  await ready;
+  const { error } = await auth.updateUser({ password });
+  return error ? { ok: false, errorCode: friendly(error) } : { ok: true };
 }
 
-export function register(email, password, profile, options) {
-  return runLogin(() => registerMember(email, password, profile, options));
+export async function accessToken() {
+  await ready;
+  const { data } = await auth.getSession();
+  return data.session ? data.session.access_token : null;
 }
 
-export function verifyEmail(code) {
-  return runLogin(() => verifyMemberEmail(code));
+// Calls one of Gleam's own server functions with the member's login attached.
+export async function api(path, { method = 'GET', body } = {}) {
+  const token = await accessToken();
+  const headers = { Authorization: 'Bearer ' + (token || '') };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  const r = await fetch(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(out.error || ('HTTP ' + r.status)); e.status = r.status; e.body = out; throw e; }
+  return out;
 }
 
-export async function logout(returnTo) {
-  setState({ member: null, loggedIn: false });
-  try {
-    await logoutMember(returnTo);
-  } catch (e) {
-    setState({ error: e instanceof Error ? e.message : String(e) });
-    throw e;
-  }
+export async function logout(returnTo = '/login.html') {
+  try { await auth.signOut(); } catch {}
+  try { localStorage.removeItem(STORAGE_KEY); PERSONAL_KEYS.forEach(k => localStorage.removeItem(k)); } catch {}
+  syncLoginCookie(null);
+  location.href = returnTo;
 }
