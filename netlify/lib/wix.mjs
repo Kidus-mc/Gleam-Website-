@@ -1,7 +1,7 @@
 // Shared server helpers for Gleam's Netlify functions.
 // The Wix client secret lives ONLY in Netlify's environment variables (WIX_CLIENT_SECRET), never in the site code.
-export const WIX = 'https://www.wixapis.com';
-export const CLIENT_ID = 'ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b';
+const WIX = 'https://www.wixapis.com';
+const CLIENT_ID = 'ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b'; // public Wix client ID
 
 const fail = (status, code) => Object.assign(new Error(code), { status, code });
 
