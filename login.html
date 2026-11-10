@@ -185,7 +185,7 @@ const MSG = {
 };
 // Too many wrong passwords: lock the log-in form on this device for a while.
 // (Supabase also limits tries on its server, so clearing the browser doesn't get around it.)
-const MAX_TRIES = 5, LOCK_MIN = 15, FK = 'gleam-login-fails';
+const MAX_TRIES = 5, LOCK_MIN = 1, FK = 'gleam-login-fails';
 function fails(){ try { const f = JSON.parse(localStorage.getItem(FK) || 'null'); return f && typeof f.n === 'number' ? f : { n: 0, until: 0 }; } catch (x) { return { n: 0, until: 0 }; } }
 function saveFails(f){ try { localStorage.setItem(FK, JSON.stringify(f)); } catch (x) {} }
 function lockLeft(){ const f = fails(); return Math.max(0, f.until - Date.now()); }
