@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <script>/* one site: the Wix copy sends people to Gleam on Netlify */if(/wix-site-host\.com$/.test(location.hostname))location.replace('https://allgleam.netlify.app'+location.pathname+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>/* login wall: members only */(function(){try{var t=JSON.parse(localStorage.getItem('wix-visitor-ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b')||'null');if(t&&t.role==='member'&&t.refreshToken)return}catch(e){}document.documentElement.style.visibility='hidden';location.replace('/login.html?returnTo='+encodeURIComponent(location.pathname+location.search+location.hash))})()</script>
+<script>/* login wall: members only */(function(){try{var t=JSON.parse(localStorage.getItem('sb-huskusxmuyxiucufcmkv-auth-token')||'null');if(t&&t.refresh_token)return}catch(e){}document.documentElement.style.visibility='hidden';location.replace('/login.html?returnTo='+encodeURIComponent(location.pathname+location.search+location.hash))})()</script>
 <script>if(location.protocol==='http:'&&!/^(localhost|127\.)/.test(location.hostname))location.replace('https:'+location.href.slice(5))</script>
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Gleam Car Detailing | Mobile Car Detailing That Comes to You</title>
@@ -818,13 +818,15 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   const PKG={exterior:'Exterior',interior:'Interior',full:'Full Detail',addons:'Add-ons'};
   const PRICE_KEY={exterior:'priceExterior',interior:'priceInterior',full:'priceFull',addons:'priceAddons'};
   const WIX='https://www.wixapis.com', CLIENT_ID='ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b', TK='wix-visitor-'+CLIENT_ID;
-  try{ const _t=JSON.parse(localStorage.getItem(TK)||'null'); if(_t&&_t.role==='member') document.querySelectorAll('[data-account-link]').forEach(a=>{ a.textContent='My account'; a.href='/account.html' }) }catch(e){}
+  const GA=import('/js/gleam-auth.js'); /* Supabase login: keeps the login fresh and hands out its token */
+  const SB='sb-huskusxmuyxiucufcmkv-auth-token', signedIn=()=>{ try{ const t=JSON.parse(localStorage.getItem(SB)||'null'); return !!(t&&t.refresh_token) }catch(e){ return false } };
+  async function loginToken(){ try{ return 'Bearer '+((await (await GA).accessToken())||'') }catch(e){ return '' } }
+  try{ if(signedIn()) document.querySelectorAll('[data-account-link]').forEach(a=>{ a.textContent='My account'; a.href='/account.html' }) }catch(e){}
   async function mintToken(body,role){
     const r=await fetch(WIX+'/oauth2/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({clientId:CLIENT_ID},body))});
     if(!r.ok) throw new Error('Could not connect ('+r.status+').');
     const d=await r.json(); const t={accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+d.expires_in*1000,role:role||'visitor'};
     try{localStorage.setItem(TK,JSON.stringify(t))}catch(e){}
-    (function(t){try{if(t&&t.role==='member'&&t.accessToken){document.cookie='gleam_at='+encodeURIComponent(t.accessToken)+';path=/;max-age='+Math.max(0,Math.floor((t.expiresAt-Date.now())/1000))+';secure;samesite=lax'}else{document.cookie='gleam_at=;path=/;max-age=0;secure;samesite=lax'}}catch(e){}})(t);
     return t.accessToken;
   }
   async function wixToken(){
@@ -1034,7 +1036,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     btn.disabled=true; btn.textContent='Sending…'; err.textContent='';
     try{
       // Gleam's server works out the real price from the detailer's listing and saves the request.
-      const r=await fetch('/api/book',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await wixToken()},body:JSON.stringify({
+      const r=await fetch('/api/book',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await loginToken()},body:JSON.stringify({
         package:cur,detailerId:d._id,addons:[...form.querySelectorAll('input[name=addon]:checked')].map(i=>+i.value),
         serviceType:where,customerName:v('customerName'),phone:v('phone'),email:v('email'),address:needAddr?v('address'):'',zip:custLoc?custLoc.zip:'',preferredTime:v('preferredTime'),notes:v('notes')})});
       if(!r.ok){
@@ -1059,35 +1061,25 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   /* saved address: member profile in Wix (only the member can read or change it) */
   const addrBtn=document.getElementById('addrBtn'), addrBtnText=document.getElementById('addrBtnText'), addrDlg=document.getElementById('addrDlg');
   const addrZip=document.getElementById('addrZip'), addrStreet=document.getElementById('addrStreet'), addrErr=document.getElementById('addrErr'), addrSave=document.getElementById('addrSave');
-  function isMember(){ try{ const t=JSON.parse(localStorage.getItem(TK)||'null'); return !!(t&&t.role==='member') }catch(e){ return false } }
+  const isMember=signedIn;
   function paintAddr(){
     addrBtnText.textContent=GP.zip||'Address';
     addrBtn.setAttribute('aria-label',GP.zip?'Your address: '+(GP.address?GP.address+', ':'')+GP.zip+'. Change it':'Set your address');
-  }
-  async function wixReq(method,path,body){
-    const r=await fetch(WIX+path,{method,headers:{'Content-Type':'application/json',Authorization:await wixToken()},body:JSON.stringify(body)});
-    const d=await r.json().catch(()=>null);
-    if(!r.ok) throw new Error((d&&d.message)||('Request failed ('+r.status+').'));
-    return d;
   }
   function keepLocal(){ try{ localStorage.setItem(ZK,GP.zip); localStorage.setItem(AK,GP.address) }catch(e){} }
   async function saveProfile(zip,address){
     GP.zip=zip; GP.address=address||''; keepLocal(); paintAddr();
     if(!isMember()) return;
-    const data={zip:GP.zip,address:GP.address};
-    if(GP.id){ await wixReq('PUT','/wix-data/v2/items/'+GP.id,{dataCollectionId:'MemberProfiles',dataItem:{id:GP.id,data}}); return }
-    const d=await wixPost('/wix-data/v2/items',{dataCollectionId:'MemberProfiles',dataItem:{data}});
-    GP.id=d&&d.dataItem&&(d.dataItem.id||d.dataItem._id)||null;
+    await (await GA).api('/api/profile',{method:'PUT',body:{zip:GP.zip,address:GP.address}});
   }
   function useZip(zip){ custZip.value=zip; heroZipInput.value=zip; findZip(zip) }
   async function loadProfile(){
     if(!isMember()) return;
     try{
-      const d=await wixPost('/wix-data/v2/items/query',{dataCollectionId:'MemberProfiles',query:{sort:[{fieldName:'_updatedDate',order:'DESC'}],paging:{limit:1}}});
-      const it=d&&d.dataItems&&d.dataItems[0];
-      if(it&&it.data&&/^\d{5}$/.test(it.data.zip||'')){
-        GP.id=it.id||it.data._id; const changed=it.data.zip!==GP.zip;
-        GP.zip=it.data.zip; GP.address=it.data.address||''; keepLocal(); paintAddr();
+      const p=await (await GA).api('/api/profile');
+      if(p&&/^\d{5}$/.test(p.zip||'')){
+        const changed=p.zip!==GP.zip;
+        GP.zip=p.zip; GP.address=p.address||''; keepLocal(); paintAddr();
         if(changed||!custLoc) useZip(GP.zip);
       } else if(/^\d{5}$/.test(GP.zip)) saveProfile(GP.zip,GP.address).catch(()=>{});
     }catch(e){}

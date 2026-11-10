@@ -2,7 +2,7 @@
 
 On-demand car detailing marketplace. Members log in, see the detailers who serve their saved ZIP (mobile detailers who come to them, or shops they drive to) with each detailer's own prices, and send a booking request. Detailers apply with their prices, service area or shop address, custom add-ons and photos of their work.
 
-Plain static site (HTML, CSS, JS) with no build step, plus a few Netlify functions. Data, member login and media live in Wix Headless (the client ID in the pages is public by design).
+Plain static site (HTML, CSS, JS) with no build step, plus a few Netlify functions. Member login (email + password, Continue with Google) runs on Supabase Auth. Data and media live in Wix Headless and are only reached through the Netlify functions below. The Supabase publishable key and Wix client ID in the pages are public by design.
 
 | Page | What it is |
 | --- | --- |
@@ -19,7 +19,8 @@ Plain static site (HTML, CSS, JS) with no build step, plus a few Netlify functio
 
 ## Code
 
-- `js/gleam-auth.js`: member login, sign-up, logout and the login cookie (readable source, edit directly).
+- `js/gleam-auth.js`: Supabase login, sign-up, Google, password reset, logout and the login cookie (readable source, edit directly).
+- `js/vendor/supabase-auth.js`: Supabase's login library (@supabase/auth-js 2.118.0, MIT), bundled so there's no build step.
 - `assets/`: shared styles for the simpler pages, light mode, and the cookie-choices + Appearance menu script.
 
 ## Server (Netlify)
@@ -27,6 +28,9 @@ Plain static site (HTML, CSS, JS) with no build step, plus a few Netlify functio
 - `netlify/edge-functions/login-wall.js`: checks the member's login before the homepage, detailers page and account page are sent.
 - `netlify/functions/book.mjs`: saves booking requests and works out the price from the detailer's listing.
 - `netlify/functions/my-bookings.mjs`: returns only the logged-in member's own requests.
+- `netlify/functions/profile.mjs`: the member's own saved ZIP and address.
+- `netlify/functions/apply.mjs`: saves detailer applications (known fields only, Wix photo links only, 3 a day).
+- `netlify/functions/my-application.mjs`: the member's latest application and whether it's live.
 - `netlify/functions/upload-url.mjs`: one-time photo upload links for logged-in detailers.
 - `netlify/functions/health.mjs`: says whether the server is set up.
 

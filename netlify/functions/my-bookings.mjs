@@ -6,7 +6,7 @@ export default handle(async req => {
   sameOrigin(req);
   const member = await memberFrom(req);
   const res = await wixAdmin('/wix-data/v2/items/query', { dataCollectionId: 'BookingRequests', query: {
-    filter: { $or: [{ memberId: member.id }, { _owner: member.id }] },
+    filter: { $or: member.email ? [{ memberId: member.id }, { memberEmail: member.email }] : [{ memberId: member.id }] },
     sort: [{ fieldName: '_createdDate', order: 'DESC' }], paging: { limit: 100 } } });
   const items = (res.dataItems || []).map(x => {
     const v = x.data || {};
