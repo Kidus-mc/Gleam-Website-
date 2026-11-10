@@ -206,7 +206,7 @@ async function guardedLogin(email, pw){
     if (f.n >= MAX_TRIES) { f.until = Date.now() + LOCK_MIN * 60000; f.n = 0; saveFails(f); return { ok: false, errorCode: 'locked' }; }
     saveFails(f);
     const left = MAX_TRIES - f.n;
-    if (left <= 2) return { ok: false, errorCode: 'invalidPassword', note: ' ' + left + (left === 1 ? ' try' : ' tries') + ' left before log-in pauses for ' + LOCK_MIN + ' minutes.' };
+    if (left <= 2) return { ok: false, errorCode: 'invalidPassword', note: ' ' + left + (left === 1 ? ' try' : ' tries') + ' left before log-in pauses for ' + LOCK_MIN + (LOCK_MIN === 1 ? ' minute.' : ' minutes.') };
   }
   if (r.errorCode === 'tooMany') { const f = fails(); f.until = Date.now() + LOCK_MIN * 60000; f.n = 0; saveFails(f); return { ok: false, errorCode: 'locked' }; }
   return r;
