@@ -300,6 +300,21 @@ html.js .who-figure[data-reveal].in{transform:none}
 .zip-form.has-zip label,.zip-form.has-zip .zip-row{display:none}
 .zip-change{align-self:flex-start;min-height:2.75rem;padding:0;border:0;background:none;color:var(--foreground);font:inherit;font-size:0.9375rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .hero-zip.has-zip .zip-row input,.hero-zip.has-zip > .label{display:none}
+/* use my location + "you've moved" prompt */
+.loc-btn{align-self:flex-start;display:inline-flex;align-items:center;gap:0.5rem;min-height:2.75rem;padding:0 1rem 0 0.85rem;border-radius:9999px;border:1px solid var(--line-strong);background:transparent;color:var(--foreground);font:inherit;font-size:0.9375rem;font-weight:500;cursor:pointer;transition:border-color 300ms ease-out}
+.loc-btn:hover{border-color:var(--foreground)}
+.loc-btn svg{width:18px;height:18px;flex:none;color:var(--accent)}
+.loc-btn[aria-busy=true]{opacity:0.6;cursor:progress}
+.loc-btn[hidden]{display:none}
+.addr-dlg .loc-btn{align-self:stretch;justify-content:center}
+.loc-ask{position:fixed;left:50%;bottom:calc(1rem + env(safe-area-inset-bottom,0px));z-index:60;width:min(30rem,calc(100% - 2rem));transform:translate(-50%,140%);transition:transform 420ms var(--expo);padding:1rem 1.125rem;border:1px solid var(--line-strong);border-radius:0.75rem;background:var(--surface);color:var(--foreground);box-shadow:0 12px 32px rgba(0,0,0,0.55)}
+.loc-ask.show{transform:translate(-50%,0)}
+.loc-ask p{font-size:0.9375rem;line-height:1.4;margin-bottom:0.75rem}
+.loc-ask p b{font-weight:600}
+.loc-ask .a-row{display:flex;gap:0.5rem;flex-wrap:wrap}
+.loc-ask button{flex:1 1 9rem;min-height:2.75rem;border-radius:9999px;font:inherit;font-size:var(--fs-eyebrow);font-weight:600;text-transform:uppercase;letter-spacing:0.12em;cursor:pointer}
+.loc-ask .la-yes{border:0;background:var(--accent);color:var(--background)}
+.loc-ask .la-no{border:1px solid var(--line-strong);background:none;color:var(--foreground)}
 @media (max-width:767px){.site-nav .nav-right{gap:0.625rem}}
 .d-empty{padding-block:2rem;color:var(--muted);border-bottom:1px solid var(--line);opacity:1!important;transform:none!important}
 .d-empty a,.drawer-foot a{color:var(--foreground);text-decoration:underline;text-underline-offset:3px}
@@ -508,6 +523,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
           <label for="heroZipInput" class="label">Find detailers near you</label>
           <div class="zip-row"><input id="heroZipInput" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="Your ZIP code"><button type="submit" class="zip-go">Book a detail</button></div>
           <p class="zip-note" id="heroZipNote" aria-live="polite"></p>
+          <button type="button" class="loc-btn" data-loc hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg><span>Use my location</span></button>
         </form>
       </div>
     </div>
@@ -673,12 +689,18 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   <form id="addrForm" novalidate>
     <h2 id="addrTitle">Your address</h2>
     <p>We use it to show detailers who come to you and to fill in your booking. Change it anytime.</p>
+    <button type="button" class="loc-btn" data-loc hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg><span>Use my location</span></button>
     <label class="f" for="addrZip"><span>ZIP code</span><input id="addrZip" inputmode="numeric" autocomplete="postal-code" maxlength="5" required></label>
     <label class="f" for="addrStreet"><span>Street address (optional)</span><input id="addrStreet" autocomplete="street-address" maxlength="150" placeholder="e.g. 120 Court St, Brooklyn"></label>
     <p class="a-err" id="addrErr" role="alert"></p>
     <div class="a-row"><button type="button" class="a-cancel" id="addrCancel">Cancel</button><button type="submit" class="a-save" id="addrSave">Save</button></div>
   </form>
 </dialog>
+
+<div class="loc-ask" id="locAsk" role="dialog" aria-live="polite" aria-labelledby="locAskText" hidden>
+  <p id="locAskText"></p>
+  <div class="a-row"><button type="button" class="la-yes" id="locYes">Use where I am</button><button type="button" class="la-no" id="locNo">Keep my address</button></div>
+</div>
 
 <div class="drawer-wrap" id="drawerWrap">
   <div class="drawer-scrim" id="drawerScrim"></div>
@@ -696,6 +718,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
         <div class="zip-row"><input id="custZip" name="zip" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="e.g. 11201"><button type="submit" class="zip-go">Find detailers</button></div>
         <p class="zip-note" id="zipNote" aria-live="polite">Showing all detailers. Set your address to see who comes to you.</p>
         <button type="button" class="zip-change" id="zipChange">Set your address</button>
+        <button type="button" class="loc-btn" data-loc hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg><span>Use my location</span></button>
       </form>
       <div class="sort" id="sortWrap" role="group" aria-label="Sort detailers">
         <span class="label">Sort</span>
@@ -895,7 +918,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   const dEyebrow=document.getElementById('drawerEyebrow'), dClose=document.getElementById('drawerClose');
   const zipForm=document.getElementById('zipForm'), custZip=document.getElementById('custZip'), zipNote=document.getElementById('zipNote'), sortWrap=document.getElementById('sortWrap');
   const sortBtns=[...document.querySelectorAll('[data-sort]')];
-  const ZK='gleam-zip', AK='gleam-address';
+  const ZK='gleam-zip', AK='gleam-address', GK='gleam-geo', SK='gleam-geo-skip';
   const GP={id:null,zip:'',address:''};
   try{ GP.zip=localStorage.getItem(ZK)||''; GP.address=localStorage.getItem(AK)||'' }catch(e){}
   let cur=null, sortBy='price', openFor=null, sent={}, sentWhere={}, lastFocus=null;
@@ -966,16 +989,17 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     }).join('');
     requestAnimationFrame(()=>requestAnimationFrame(()=>drawer.classList.add('listed')));
   }
-  async function findZip(zip){
+  async function findZip(zip,here){
     zipNote.textContent='Finding detailers near '+zip+'…';
     const info=await zipInfo(zip);
-    custLoc=info?{zip,lat:info.lat,lng:info.lng}:{zip,lat:null,lng:null};
-    try{localStorage.setItem(ZK,zip)}catch(e){}
-    zipNote.textContent=info?'Showing detailers who travel to '+info.city+', '+info.state+' '+zip+'.':'Showing detailers in the '+zip.slice(0,3)+'xx area.';
+    custLoc=here?{zip,lat:here.lat,lng:here.lng}:info?{zip,lat:info.lat,lng:info.lng}:{zip,lat:null,lng:null};
+    try{localStorage.setItem(ZK,zip); if(!here) localStorage.removeItem(GK)}catch(e){}
+    zipNote.textContent=here&&info?'Showing detailers near your location in '+info.city+', '+info.state+', closest first.':info?'Showing detailers who travel to '+info.city+', '+info.state+' '+zip+'.':'Showing detailers in the '+zip.slice(0,3)+'xx area.';
     zipForm.classList.add('has-zip'); document.getElementById('zipChange').textContent='Change address'; document.getElementById('heroZip').classList.add('has-zip');
     openFor=null; updateCards(); render();
   }
-  if(/^\d{5}$/.test(custZip.value)) findZip(custZip.value);
+  function savedGeo(){ try{ const g=JSON.parse(localStorage.getItem(GK)||'null'); return g&&isFinite(g.lat)&&isFinite(g.lng)&&g.zip===custZip.value?g:null }catch(e){ return null } }
+  if(/^\d{5}$/.test(custZip.value)) findZip(custZip.value,savedGeo());
   zipForm.addEventListener('submit',e=>{
     e.preventDefault(); const zip=custZip.value.trim();
     if(!/^\d{5}$/.test(zip)){ zipNote.textContent='Enter a 5-digit ZIP code.'; custZip.focus(); return }
@@ -1072,7 +1096,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     if(!isMember()) return;
     await (await GA).api('/api/profile',{method:'PUT',body:{zip:GP.zip,address:GP.address}});
   }
-  function useZip(zip){ custZip.value=zip; heroZipInput.value=zip; findZip(zip) }
+  function useZip(zip,here){ custZip.value=zip; heroZipInput.value=zip; return findZip(zip,here) }
   async function loadProfile(){
     if(!isMember()) return;
     try{
@@ -1080,7 +1104,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
       if(p&&/^\d{5}$/.test(p.zip||'')){
         const changed=p.zip!==GP.zip;
         GP.zip=p.zip; GP.address=p.address||''; keepLocal(); paintAddr();
-        if(changed||!custLoc) useZip(GP.zip);
+        if(changed||!custLoc) useZip(GP.zip,changed?null:savedGeo());
       } else if(/^\d{5}$/.test(GP.zip)) saveProfile(GP.zip,GP.address).catch(()=>{});
     }catch(e){}
   }
@@ -1106,6 +1130,77 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     finally{ addrSave.disabled=false; addrSave.textContent='Save' }
   });
   paintAddr(); loadProfile();
+
+  /* use my location: the browser asks once; after that we re-check on each visit and,
+     if they're more than 3 miles from where we last showed detailers, ask before switching */
+  const MOVED_MI=3, geoOK='geolocation' in navigator&&window.isSecureContext;
+  const locBtns=[...document.querySelectorAll('[data-loc]')];
+  const locAsk=document.getElementById('locAsk'), locAskText=document.getElementById('locAskText');
+  if(geoOK) locBtns.forEach(b=>b.hidden=false);
+  function getHere(){
+    return new Promise((ok,no)=>navigator.geolocation.getCurrentPosition(
+      p=>ok({lat:p.coords.latitude,lng:p.coords.longitude}),no,
+      {enableHighAccuracy:false,timeout:15000,maximumAge:120000}));
+  }
+  async function nearestZip(here){
+    const z=await loadZips(); if(!z) return null; ZT=z;
+    let best=null, bd=1e9;
+    for(const k in z){ const v=z[k], la=+v.latitude, lo=+v.longitude;
+      if(!/^\d{5}$/.test(k)||!la||Math.abs(la-here.lat)>1||Math.abs(lo-here.lng)>1.5) continue;
+      const m=miles(here.lat,here.lng,la,lo); if(m<bd){ bd=m; best=k } }
+    return best&&bd<40?best:null;
+  }
+  async function applyHere(here,zip){
+    try{ localStorage.setItem(GK,JSON.stringify({lat:here.lat,lng:here.lng,zip})); localStorage.removeItem(SK) }catch(e){}
+    const street=zip===GP.zip?GP.address:'';
+    saveProfile(zip,street).catch(()=>{});
+    await useZip(zip,here); render();
+  }
+  function geoErr(e){
+    if(e&&e.code===1) return 'Location is off for Gleam. Turn it on in your browser or phone settings, or enter your ZIP code.';
+    return 'We couldn’t find your location. Enter your ZIP code instead.';
+  }
+  async function useMyLocation(btn){
+    const note=btn.closest('dialog')?addrErr:btn.closest('#heroZip')?heroZipNote:zipNote;
+    btn.setAttribute('aria-busy','true'); note.textContent='Finding your location…';
+    try{
+      const here=await getHere(), zip=await nearestZip(here);
+      if(!zip){ note.textContent='Gleam only works in the US for now. Enter your ZIP code instead.'; return }
+      await applyHere(here,zip);
+      if(btn.closest('dialog')) closeAddr();
+      if(note!==zipNote) note.textContent='';
+    }catch(e){ note.textContent=geoErr(e) }
+    finally{ btn.removeAttribute('aria-busy') }
+  }
+  locBtns.forEach(b=>b.addEventListener('click',()=>useMyLocation(b)));
+
+  // where we last showed detailers: their exact spot if they used location, else their ZIP's center
+  async function lastSpot(){
+    try{ const g=JSON.parse(localStorage.getItem(GK)||'null'); if(g&&g.zip===GP.zip&&isFinite(g.lat)) return g }catch(e){}
+    if(!/^\d{5}$/.test(GP.zip)) return null;
+    const i=await zipInfo(GP.zip); return i?{lat:i.lat,lng:i.lng,zip:GP.zip}:null;
+  }
+  let pending=null, lastCheck=0;
+  function hideAsk(){ locAsk.classList.remove('show'); setTimeout(()=>{ if(!locAsk.classList.contains('show')) locAsk.hidden=true },450) }
+  async function checkMoved(){
+    if(!geoOK||!navigator.permissions||Date.now()-lastCheck<5*60000) return;
+    lastCheck=Date.now();
+    let st; try{ st=await navigator.permissions.query({name:'geolocation'}) }catch(e){ return }
+    if(st.state!=='granted') return;            // never pop the browser's permission box on its own
+    let here; try{ here=await getHere() }catch(e){ return }
+    const zip=await nearestZip(here); if(!zip) return;
+    const from=await lastSpot();
+    if(!from){ return applyHere(here,zip) }     // no address yet: just use where they are
+    if(miles(from.lat,from.lng,here.lat,here.lng)<=MOVED_MI) return;
+    try{ const s=JSON.parse(localStorage.getItem(SK)||'null'); if(s&&miles(s.lat,s.lng,here.lat,here.lng)<=MOVED_MI) return }catch(e){}
+    const info=await zipInfo(zip);
+    pending={here,zip};
+    locAskText.innerHTML='Looks like you’re in <b>'+esc(info?info.city+', '+info.state:zip)+'</b> now. Show detailers near where you are instead of <b>'+esc(GP.zip)+'</b>?';
+    locAsk.hidden=false; requestAnimationFrame(()=>locAsk.classList.add('show'));
+  }
+  document.getElementById('locYes').addEventListener('click',async()=>{ hideAsk(); if(pending){ await applyHere(pending.here,pending.zip); pending=null } });
+  document.getElementById('locNo').addEventListener('click',()=>{ hideAsk(); if(pending){ try{ localStorage.setItem(SK,JSON.stringify(pending.here)) }catch(e){} pending=null } });
+  if(geoOK){ setTimeout(checkMoved,1200); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checkMoved() }) }
 
   const mBar=document.getElementById('mBar'), pkgSec=document.getElementById('packages'), heroSec=document.getElementById('top');
   function barCheck(){ const r=pkgSec.getBoundingClientRect(), inPk=r.top<innerHeight*0.5&&r.bottom>innerHeight*0.5; mBar.classList.toggle('show',(window.scrollY||0)>heroSec.offsetHeight*0.7&&!inPk) }
