@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /account.html
+
+Sitemap: https://allgleam.netlify.app/sitemap.xml
