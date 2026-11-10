@@ -183,6 +183,34 @@ const MSG = {
   tooMany: 'Too many tries. Wait a few minutes, then try again.',
   generic: 'Something went wrong. Try again.'
 };
+// Too many wrong passwords: lock the log-in form on this device for a while.
+// (Supabase also limits tries on its server, so clearing the browser doesn't get around it.)
+const MAX_TRIES = 5, LOCK_MIN = 15, FK = 'gleam-login-fails';
+function fails(){ try { const f = JSON.parse(localStorage.getItem(FK) || 'null'); return f && typeof f.n === 'number' ? f : { n: 0, until: 0 }; } catch (x) { return { n: 0, until: 0 }; } }
+function saveFails(f){ try { localStorage.setItem(FK, JSON.stringify(f)); } catch (x) {} }
+function lockLeft(){ const f = fails(); return Math.max(0, f.until - Date.now()); }
+function lockMsg(ms){ const m = Math.ceil(ms / 60000); return 'Too many wrong tries. For your safety, log-in is paused for ' + m + (m === 1 ? ' minute' : ' minutes') + '. You can reset your password instead.'; }
+let lockTimer = null;
+function paintLock(){
+  const ms = lockLeft(), locked = ms > 0 && mode === 'in';
+  $('authBtn').disabled = locked;
+  if (locked) { $('authErr').textContent = lockMsg(ms); clearTimeout(lockTimer); lockTimer = setTimeout(paintLock, Math.min(ms, 30000)); }
+  else if (/Too many wrong tries/.test($('authErr').textContent)) $('authErr').textContent = '';
+}
+async function guardedLogin(email, pw){
+  if (lockLeft() > 0) return { ok: false, errorCode: 'locked' };
+  const r = await login(email, pw);
+  if (r.ok) { try { localStorage.removeItem(FK); } catch (x) {} return r; }
+  if (r.errorCode === 'invalidPassword') {
+    const f = fails(); f.n += 1;
+    if (f.n >= MAX_TRIES) { f.until = Date.now() + LOCK_MIN * 60000; f.n = 0; saveFails(f); return { ok: false, errorCode: 'locked' }; }
+    saveFails(f);
+    const left = MAX_TRIES - f.n;
+    if (left <= 2) return { ok: false, errorCode: 'invalidPassword', note: ' ' + left + (left === 1 ? ' try' : ' tries') + ' left before log-in pauses for ' + LOCK_MIN + ' minutes.' };
+  }
+  if (r.errorCode === 'tooMany') { const f = fails(); f.until = Date.now() + LOCK_MIN * 60000; f.n = 0; saveFails(f); return { ok: false, errorCode: 'locked' }; }
+  return r;
+}
 // ZIP from sign-up goes to the member's private profile once they're logged in
 async function syncProfile(){
   const work = (async () => {
@@ -213,7 +241,9 @@ function setMode(m){
   $('authTitle').textContent = m === 'in' ? 'Log in' : 'Create your account';
   $('password').autocomplete = m === 'in' ? 'current-password' : 'new-password';
   $('authErr').textContent = '';
+  $('authBtn').disabled = false;
   show('authForm');
+  paintLock();
 }
 $('tabIn').addEventListener('click', () => setMode('in'));
 $('tabUp').addEventListener('click', () => setMode('up'));
@@ -232,9 +262,10 @@ async function run(btn, label, fn, errEl){
     const r = await fn();
     if (r && r.ok && r.checkEmail) { $('checkEmailText').textContent = 'Check your email. We sent a link to ' + $('email').value.trim() + ' to confirm your account. Open it on this device to finish signing up (check spam too).'; $('authTitle').textContent = 'Confirm your email'; show('checkEmail'); }
     else if (r && r.ok) { keepBusy = true; if (r.done !== false) syncProfile().finally(() => location.assign(returnTo)); }
-    else { errEl.textContent = MSG[r && r.errorCode] || MSG.generic; if (r && r.errorCode === 'emailAlreadyExists') setTimeout(() => { setMode('in'); $('authErr').textContent = MSG.emailAlreadyExists; }, 0); }
+    else if (r && r.errorCode === 'locked') { paintLock(); }
+    else { errEl.textContent = (MSG[r && r.errorCode] || MSG.generic) + ((r && r.note) || ''); if (r && r.errorCode === 'emailAlreadyExists') setTimeout(() => { setMode('in'); $('authErr').textContent = MSG.emailAlreadyExists; }, 0); }
   } catch (e) { errEl.textContent = 'We couldn’t reach the login service. Check your connection and try again.'; }
-  finally { if (!keepBusy) { busy = false; btn.disabled = false; btn.innerHTML = old; } }
+  finally { if (!keepBusy) { busy = false; btn.disabled = false; btn.innerHTML = old; paintLock(); } }
 }
 $('googleBtn').addEventListener('click', () => {
   // the ZIP typed on the sign-up tab (if any) is saved after Google sends them back
@@ -249,7 +280,8 @@ $('authForm').addEventListener('submit', e => {
   if (!pw) { $('authErr').textContent = 'Enter your password.'; $('password').focus(); return; }
   if (mode === 'in') {
     try { localStorage.removeItem('gleam-pending-profile'); } catch (x) {}
-    run($('authBtn'), 'Logging in…', () => login(email, pw), $('authErr'));
+    if (lockLeft() > 0) { paintLock(); return; }
+    run($('authBtn'), 'Logging in…', () => guardedLogin(email, pw), $('authErr'));
   } else {
     const zip = $('zip').value.trim();
     if (!/^\d{5}$/.test(zip)) { $('authErr').textContent = 'Enter your 5-digit ZIP code.'; $('zip').focus(); return; }
