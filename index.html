@@ -350,6 +350,30 @@ html.js .who-figure[data-reveal].in{transform:none}
 .drawer-close svg{width:1rem;height:1rem}
 .drawer-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding-block:1.5rem 2rem;padding-left:max(2rem,env(safe-area-inset-left,0px));padding-right:max(2rem,env(safe-area-inset-right,0px))}
 .sort{display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem}
+/* search: homepage bar + filter inside the detailer list */
+.srch{position:relative;display:flex;align-items:center}
+.srch svg{position:absolute;left:1rem;width:18px;height:18px;color:var(--muted);pointer-events:none}
+.srch input{font:inherit;font-size:max(16px,1rem);color:var(--foreground);background:var(--surface);border:1px solid var(--line-strong);border-radius:9999px;padding:0 2.75rem 0 2.75rem;min-height:3rem;width:100%;-webkit-appearance:none;appearance:none}
+.srch input::-webkit-search-cancel-button{display:none}
+.srch input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.srch .s-clear{position:absolute;right:0.25rem;width:2.5rem;height:2.5rem;border:0;border-radius:9999px;background:none;color:var(--muted);font-size:1.25rem;line-height:1;cursor:pointer}
+.srch .s-clear[hidden]{display:none}
+.find{margin:2.5rem 0 3rem;max-width:44rem}
+.find > .label{display:block;margin-bottom:0.75rem}
+.s-res{list-style:none;margin:0.75rem 0 0;padding:0;display:flex;flex-direction:column}
+.s-res:empty{display:none}
+.s-item{display:grid;grid-template-columns:auto 1fr;gap:0.25rem 1rem;align-items:start;padding:1rem 0;border-bottom:1px solid var(--line)}
+.s-item .d-avatar{grid-row:span 3}
+.s-name{font-weight:600}
+.s-sub{font-size:0.875rem;color:var(--muted)}
+.s-pk{display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem}
+.s-pk button{min-height:2.75rem;padding:0 1rem;border-radius:9999px;border:1px solid var(--line-strong);background:none;color:var(--foreground);font:inherit;font-size:0.875rem;cursor:pointer;transition:border-color 300ms ease-out}
+.s-pk button:hover{border-color:var(--accent)}
+.s-pk b{font-weight:600;margin-left:0.35rem}
+.s-none{padding:1rem 0;color:var(--muted);font-size:0.9375rem}
+.d-filter{margin-bottom:1rem}
+.d-filter input{min-height:2.75rem;background:var(--background)}
+.d-out{color:var(--accent-2)}
 .sort .label{margin-right:0.5rem}
 .sort button{min-height:2.5rem;padding:0 1rem;border-radius:9999px;border:1px solid var(--line-strong);font-size:var(--fs-eyebrow);font-weight:500;text-transform:uppercase;letter-spacing:0.14em;color:var(--muted);transition:all 300ms ease-out}
 .sort button[aria-pressed="true"]{background:var(--foreground);border-color:var(--foreground);color:var(--background)}
@@ -582,6 +606,12 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
       </div>
       <p class="label">Detailers set the price</p>
     </div>
+    <div class="find" role="search">
+      <label class="label" for="findQ">Looking for someone? Search by detailer, shop, city or ZIP</label>
+      <div class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="findQ" type="search" autocomplete="off" enterkeyhint="search" maxlength="60" placeholder="e.g. Jo’s, Sparkle Car Wash, Silver Spring" aria-controls="findRes" aria-describedby="findMsg"><button type="button" class="s-clear" id="findClear" aria-label="Clear search" hidden>&times;</button></div>
+      <p class="s-none" id="findMsg" aria-live="polite" hidden></p>
+      <ul class="s-res" id="findRes" aria-label="Matching detailers"></ul>
+    </div>
     <ul class="pkg-list">
       <li data-reveal style="--y:60px;--dur:620ms">
         <article class="pkg" data-pkg="exterior">
@@ -720,6 +750,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
         <button type="button" class="zip-change" id="zipChange">Set your address</button>
         <button type="button" class="loc-btn" data-loc hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg><span>Use my location</span></button>
       </form>
+      <div class="srch d-filter" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="dFilter" type="search" autocomplete="off" maxlength="60" placeholder="Search this list" aria-label="Search detailers in this list" aria-controls="dList"><button type="button" class="s-clear" id="dFilterClear" aria-label="Clear search" hidden>&times;</button></div>
       <div class="sort" id="sortWrap" role="group" aria-label="Sort detailers">
         <span class="label">Sort</span>
         <button type="button" data-sort="price" aria-pressed="true">Lowest price</button>
@@ -911,6 +942,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     }catch(e){ loadState='error' }
     updateCards();
     if(document.body.classList.contains('drawer-open')) render();
+    if(window.__gleamFind) window.__gleamFind();
   }
   updateCards(); loadDetailers();
 
@@ -918,9 +950,15 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   const dEyebrow=document.getElementById('drawerEyebrow'), dClose=document.getElementById('drawerClose');
   const zipForm=document.getElementById('zipForm'), custZip=document.getElementById('custZip'), zipNote=document.getElementById('zipNote'), sortWrap=document.getElementById('sortWrap');
   const sortBtns=[...document.querySelectorAll('[data-sort]')];
+  const dFilter=document.getElementById('dFilter'), dFilterClear=document.getElementById('dFilterClear');
+  /* search text: every word must appear in the detailer's name, shop, city, ZIP, about or add-ons */
+  const norm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[’'`]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+  function hay(d){ return norm([d.name,d.shopName,d.city,d.state,d.zip,d.shopCity,d.shopState,d.shopZip,d.shopAddress,d.about,adds(d).map(a=>a.name).join(' ')].join(' ')) }
+  function matches(d,q){ const h=hay(d), w=norm(q).split(' ').filter(Boolean); return w.every(x=>h.includes(x)) }
   const ZK='gleam-zip', AK='gleam-address', GK='gleam-geo', SK='gleam-geo-skip';
   const GP={id:null,zip:'',address:''};
   try{ GP.zip=localStorage.getItem(ZK)||''; GP.address=localStorage.getItem(AK)||'' }catch(e){}
+  let pinned=null;
   let cur=null, sortBy='price', openFor=null, sent={}, sentWhere={}, lastFocus=null;
   try{ const z=localStorage.getItem(ZK); if(/^\d{5}$/.test(z||'')) custZip.value=z }catch(e){}
 
@@ -953,13 +991,15 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     drawer.classList.remove('listed');
     if(loadState==='loading') return empty('Loading detailers…');
     if(loadState==='error') return empty('We couldn’t load detailers right now. Check your connection and try again.');
-    const rows=DETAILERS.filter(d=>priceOf(d,cur)!=null).map(d=>Object.assign({d},covers(d))).filter(r=>r.ok)
-      .sort((a,b)=>sortBy==='price'?priceOf(a.d,cur)-priceOf(b.d,cur):((a.dist==null?1e9:a.dist)-(b.dist==null?1e9:b.dist)));
+    const fq=dFilter.value.trim();
+    const rows=DETAILERS.filter(d=>priceOf(d,cur)!=null).map(d=>Object.assign({d},covers(d))).filter(r=>(r.ok||r.d._id===pinned)&&(!fq||matches(r.d,fq)))
+      .sort((a,b)=>(b.d._id===pinned)-(a.d._id===pinned)||(sortBy==='price'?priceOf(a.d,cur)-priceOf(b.d,cur):((a.dist==null?1e9:a.dist)-(b.dist==null?1e9:b.dist))));
+    if(!rows.length&&fq) return empty('No detailer in this list matches “'+esc(fq)+'”. <button type="button" class="zip-change" data-unfilter>Show everyone</button>');
     if(!rows.length) return empty((custLoc?'No detailers cover '+esc(custLoc.zip)+' for ':'No detailers offer ')+PKG[cur]+' yet. We’re adding detailers every week. <a href="detailers.html">Are you a detailer? Join Gleam</a>');
     sortWrap.hidden=false;
     list.innerHTML=rows.map((r,i)=>{
       const d=r.d, id=esc(d._id), p=priceOf(d,cur), where=[d.city,d.state].filter(Boolean).map(esc).join(', ');
-      const sub=[r.dist!=null?r.dist.toFixed(1)+' mi away':(custLoc?'Near you':''),where].filter(Boolean).join(' · ');
+      const sub=[r.dist!=null?r.dist.toFixed(1)+' mi away':(custLoc&&r.ok?'Near you':''),where].filter(Boolean).join(' · ')+(r.ok?'':' · <span class="d-out">May not cover your area</span>');
       let act;
       if(sent[d._id+'|'+cur]) act='<p class="d-picked" role="status">Request sent. '+esc(firstName(d.name))+' or the Gleam team will contact you at '+esc(sent[d._id+'|'+cur])+' to confirm a time.'+(sentWhere[d._id+'|'+cur]==='shop'?' You’ll bring your car to the shop below.':'')+'</p>'+(sentWhere[d._id+'|'+cur]==='shop'&&offersShop(d)?mapBlock(d):'');
       else if(openFor===d._id) act=
@@ -996,7 +1036,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     try{localStorage.setItem(ZK,zip); if(!here) localStorage.removeItem(GK)}catch(e){}
     zipNote.textContent=here&&info?'Showing detailers near your location in '+info.city+', '+info.state+', closest first.':info?'Showing detailers who travel to '+info.city+', '+info.state+' '+zip+'.':'Showing detailers in the '+zip.slice(0,3)+'xx area.';
     zipForm.classList.add('has-zip'); document.getElementById('zipChange').textContent='Change address'; document.getElementById('heroZip').classList.add('has-zip');
-    openFor=null; updateCards(); render();
+    openFor=null; updateCards(); render(); if(window.__gleamFind) window.__gleamFind();
   }
   function savedGeo(){ try{ const g=JSON.parse(localStorage.getItem(GK)||'null'); return g&&isFinite(g.lat)&&isFinite(g.lng)&&g.zip===custZip.value?g:null }catch(e){ return null } }
   if(/^\d{5}$/.test(custZip.value)) findZip(custZip.value,savedGeo());
@@ -1005,16 +1045,18 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     if(!/^\d{5}$/.test(zip)){ zipNote.textContent='Enter a 5-digit ZIP code.'; custZip.focus(); return }
     findZip(zip);
   });
-  function openDrawer(k){
-    cur=k; openFor=null; lastFocus=document.activeElement;
+  function openDrawer(k,id){
+    cur=k; openFor=id||null; pinned=id||null; lastFocus=document.activeElement;
+    dFilter.value=''; dFilterClear.hidden=true;
     dEyebrow.textContent=PKG[k];
     render(); document.body.classList.add('drawer-open');
     if(lenis) lenis.stop();
     const z=custZip.value.trim();
     if(!custLoc&&/^\d{5}$/.test(z)) findZip(z);
-    setTimeout(()=>dClose.focus({preventScroll:true}),60);
+    setTimeout(()=>{ const i=id&&list.querySelector('.d-form input'); if(i){ i.closest('.d-item').scrollIntoView({block:'start'}); i.focus({preventScroll:true}) } else dClose.focus({preventScroll:true}) },id?120:60);
   }
   function closeDrawer(){
+    pinned=null;
     if(!document.body.classList.contains('drawer-open')) return;
     document.body.classList.remove('drawer-open'); if(lenis) lenis.start();
     if(lastFocus&&lastFocus.focus) lastFocus.focus({preventScroll:true});
@@ -1033,7 +1075,38 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
       if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()} else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()} }
   });
   sortBtns.forEach(b=>b.addEventListener('click',()=>{sortBy=b.dataset.sort;sortBtns.forEach(x=>x.setAttribute('aria-pressed',String(x===b)));render()}));
+  let ft=null;
+  dFilter.addEventListener('input',()=>{ dFilterClear.hidden=!dFilter.value; clearTimeout(ft); ft=setTimeout(()=>{ openFor=null; render() },150) });
+  dFilterClear.addEventListener('click',()=>{ dFilter.value=''; dFilterClear.hidden=true; render(); dFilter.focus() });
+
+  /* homepage search: find a detailer by name, shop, city or ZIP, then book a package straight away */
+  const findQ=document.getElementById('findQ'), findRes=document.getElementById('findRes'), findMsg=document.getElementById('findMsg'), findClear=document.getElementById('findClear');
+  function showFind(){
+    const q=findQ.value.trim(); findClear.hidden=!q;
+    if(!q){ findRes.innerHTML=''; findMsg.hidden=true; return }
+    if(loadState==='loading'){ findRes.innerHTML=''; findMsg.hidden=false; findMsg.textContent='Loading detailers…'; return }
+    if(loadState==='error'){ findRes.innerHTML=''; findMsg.hidden=false; findMsg.textContent='We couldn’t load detailers right now. Check your connection and try again.'; return }
+    const hits=DETAILERS.filter(d=>matches(d,q)&&Object.keys(PKG).some(k=>priceOf(d,k)!=null)).map(d=>Object.assign({d},covers(d)))
+      .sort((a,b)=>(b.ok-a.ok)||((a.dist==null?1e9:a.dist)-(b.dist==null?1e9:b.dist))||String(a.d.name).localeCompare(String(b.d.name))).slice(0,8);
+    findMsg.hidden=!!hits.length;
+    findMsg.innerHTML=hits.length?'':'No detailer matches “'+esc(q)+'”. Try a name, a shop, a city or a ZIP code.';
+    findRes.innerHTML=hits.map(r=>{
+      const d=r.d, place=[offersShop(d)&&d.shopName?d.shopName:'',[offersShop(d)?d.shopCity||d.city:d.city,offersShop(d)?d.shopState||d.state:d.state].filter(Boolean).join(', ')].filter(Boolean).map(esc).join(' · ');
+      const dist=r.dist!=null?r.dist.toFixed(1)+' mi away':'', out=custLoc&&!r.ok?'<span class="d-out">May not cover your area</span>':'';
+      const pk=Object.keys(PKG).filter(k=>priceOf(d,k)!=null).map(k=>'<button type="button" data-find="'+esc(d._id)+'" data-k="'+k+'">'+PKG[k]+'<b>'+(k==='addons'?'from ':'')+fmt(priceOf(d,k))+'</b></button>').join('');
+      return '<li class="s-item"><span class="d-avatar" aria-hidden="true">'+esc(initials(d.name))+'</span><p class="s-name">'+esc(d.name)+'</p>'+
+        '<p class="s-sub">'+[place,dist,(offersMobile(d)?'Comes to you':'')+(offersMobile(d)&&offersShop(d)?' or ':'')+(offersShop(d)?(offersMobile(d)?'shop':'Shop'):''),out].filter(Boolean).join(' · ')+'</p>'+
+        '<div class="s-pk" role="group" aria-label="Book '+esc(d.name)+'">'+pk+'</div></li>';
+    }).join('');
+  }
+  let st=null;
+  findQ.addEventListener('input',()=>{ clearTimeout(st); st=setTimeout(showFind,120) });
+  findQ.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); clearTimeout(st); showFind(); const b=findRes.querySelector('button'); if(b) b.focus() } });
+  window.__gleamFind=showFind;
+  findClear.addEventListener('click',()=>{ findQ.value=''; showFind(); findQ.focus() });
+  findRes.addEventListener('click',e=>{ const b=e.target.closest('[data-find]'); if(b) openDrawer(b.dataset.k,b.dataset.find) });
   list.addEventListener('click',e=>{
+    if(e.target.closest('[data-unfilter]')){ dFilter.value=''; dFilterClear.hidden=true; render(); dFilter.focus(); return }
     const b=e.target.closest('[data-book]');
     if(b){ openFor=b.dataset.book; render(); setTimeout(()=>{const i=list.querySelector('.d-form input'); if(i) i.focus({preventScroll:true})},60); return }
     if(e.target.closest('[data-cancel]')){ openFor=null; render() }
