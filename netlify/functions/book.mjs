@@ -1,6 +1,7 @@
 // Saves a booking request. The price is worked out HERE from the detailer's own listing,
 // so nothing the customer's browser sends can change it.
-import { handle, memberFrom, sameOrigin, wixAdmin, json, clip, LINK } from '../lib/wix.mjs';
+import { handle, memberFrom, sameOrigin, wixAdmin, json, clip, LINK, detailerContact } from '../lib/wix.mjs';
+import { sendEmail, sendText, quietly, adminEmail, adminPhone } from '../lib/notify.mjs';
 
 const PRICE_KEY = { exterior: 'priceExterior', interior: 'priceInterior', full: 'priceFull' };
 const NAMES = { exterior: 'Exterior', interior: 'Interior', full: 'Full Detail', addons: 'Add-ons' };
@@ -9,7 +10,7 @@ const r2 = x => Math.round(x * 100) / 100;
 const money = v => '$' + (Math.round(v * 100) % 100 ? v.toFixed(2) : Math.round(v));
 const MAX_PER_HOUR = 5;
 
-export default handle(async req => {
+export default handle(async (req, ctx) => {
   if (req.method !== 'POST') return json(405, { error: 'method' });
   sameOrigin(req);
   const member = await memberFrom(req);
@@ -63,6 +64,20 @@ export default handle(async req => {
     price: base, addons: picked.map(a => a.name + ' ' + money(+a.price)).join(' · '),
     subtotal, serviceFee, total, status: 'new', memberId: member.id, memberEmail: member.email, checkedBy: 'server',
   } } });
+  // Tell the detailer (and Gleam) right away. A failed alert never fails the booking.
+  const who = String(d.name || 'your detailer'), what = NAMES[pkg] + (picked.length ? ' + ' + picked.map(a => a.name).join(', ') : '');
+  const where = serviceType === 'shop' ? 'At your shop' : 'At ' + address + (zip ? ' ' + zip : '');
+  const lines = ['New booking request on Gleam', '', what + ' · ' + money(total), 'When: ' + (preferredTime || 'Flexible'), where,
+    'Customer: ' + customerName + ' · ' + phone + (email ? ' · ' + email : ''), notes ? 'Notes: ' + notes : '', '',
+    'Call or text ' + customerName.split(/\s+/)[0] + ' to confirm, then tap Confirm in your Gleam account.'].filter((l, i, a) => l !== '' || a[i - 1] !== '');
+  const sms = 'Gleam: new request. ' + what + ' ' + money(total) + ', ' + (preferredTime || 'flexible time') + '. ' + customerName + ' ' + phone + '. ' + where + '. Confirm at allgleam.netlify.app/account.html';
+  const c = await detailerContact(d);
+  await quietly(ctx, [
+    sendEmail(c.email, 'New Gleam booking: ' + what + ', ' + (preferredTime || 'flexible time'), lines),
+    sendText(c.phone, sms),
+    sendEmail(adminEmail(), '[Gleam] ' + customerName + ' booked ' + who, ['Detailer: ' + who, ...lines]),
+    sendText(adminPhone(), 'Gleam: ' + customerName + ' booked ' + who + ' (' + what + ', ' + (preferredTime || 'flexible') + ').'),
+  ]);
   return json(200, { ok: true, total });
 });
 

@@ -64,3 +64,23 @@ export const handle = fn => async (req, ctx) => {
 
 export const clip = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
 export const LINK = /(https?:\/\/|www\.)/i;
+
+// A detailer's private contact details live on their application, never on the public listing.
+export async function detailerContact(listing) {
+  if (!listing || !listing.applicationId) return {};
+  try {
+    const a = (await wixAdmin('/wix-data/v2/items/' + encodeURIComponent(listing.applicationId) + '?dataCollectionId=DetailerApplications', undefined, 'GET')).dataItem.data || {};
+    return { email: String(a.email || a.memberEmail || ''), phone: String(a.phone || '') };
+  } catch (e) { return {}; }
+}
+
+// The public listings that belong to this logged-in member (through their applications).
+export async function listingsForMember(member) {
+  const or = [{ memberId: member.id }];
+  if (member.email) or.push({ memberEmail: member.email }, { email: member.email });
+  const apps = await wixAdmin('/wix-data/v2/items/query', { dataCollectionId: 'DetailerApplications', query: { filter: { $or: or }, paging: { limit: 50 } } });
+  const ids = (apps.dataItems || []).map(x => x.id);
+  if (!ids.length) return [];
+  const l = await wixAdmin('/wix-data/v2/items/query', { dataCollectionId: 'Detailers', query: { filter: { applicationId: { $in: ids } }, paging: { limit: 50 } } });
+  return (l.dataItems || []).map(x => ({ id: x.id, ...(x.data || {}) }));
+}

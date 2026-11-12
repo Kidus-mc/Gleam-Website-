@@ -68,6 +68,24 @@
 .prices div{padding:10px 12px;border:1px solid var(--line);border-radius:6px}
 .prices b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
 .prices span{font-size:13px;color:var(--muted)}
+.wide{grid-column:1/-1}
+.jobs{margin-top:20px;list-style:none;display:flex;flex-direction:column;gap:12px}
+.job{border:1px solid var(--line-strong);border-radius:10px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px}
+.job.new{border-color:var(--accent)}
+.job .t{font-weight:600}
+.job .p{font-weight:600;font-variant-numeric:tabular-nums}
+.job .s{grid-column:1/-1;font-size:14px;color:var(--muted)}
+.job .s a{color:var(--foreground)}
+.job .when{grid-column:1/-1;font-size:15px}
+.job .row{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.job button,.job .call{min-height:44px;padding:0 18px;border-radius:9999px;font:inherit;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;cursor:pointer;border:1px solid var(--line-strong);background:none;color:var(--foreground);display:inline-flex;align-items:center;text-decoration:none}
+.job .yes{background:var(--accent);border-color:var(--accent);color:var(--background)}
+.job button[disabled]{opacity:0.5;cursor:progress}
+.job .err{grid-column:1/-1;color:var(--accent);font-size:14px}
+.job .err:empty{display:none}
+.tabs-mini{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.tabs-mini button{min-height:36px;padding:0 14px;border-radius:9999px;border:1px solid var(--line-strong);background:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer}
+.tabs-mini button[aria-pressed=true]{background:var(--foreground);border-color:var(--foreground);color:var(--background)}
 </style>
 </head>
 <body>
@@ -103,6 +121,12 @@
       </div>
 
       <div class="acct-grid">
+        <section class="card panel wide" aria-labelledby="jobH" id="jobsCard" hidden>
+          <h2 id="jobH">Bookings for you</h2>
+          <p class="sub">Requests customers sent to your listing. Call or text them to agree on the time, then tap Confirm. Customers see your answer in their Gleam account.</p>
+          <div class="tabs-mini" role="group" aria-label="Show"><button type="button" data-jf="open" aria-pressed="true">To do</button><button type="button" data-jf="all" aria-pressed="false">All</button></div>
+          <div id="jobs"><p class="empty">Loading…</p></div>
+        </section>
         <section class="card panel" aria-labelledby="bkH">
           <h2 id="bkH">Your booking requests</h2>
           <p class="sub">Requests you send while logged in show up here.</p>
@@ -152,7 +176,7 @@ function renderBookings(list){
   list.sort((a, b) => (created(b) || 0) - (created(a) || 0));
   box.innerHTML = '<ul class="items">' + list.map(b => {
     const amount = typeof b.total === 'number' && b.total > 0 ? b.total : b.price;
-    const status = !b.status || b.status === 'new' ? 'Waiting for confirmation' : String(b.status).replace(/^./, c => c.toUpperCase());
+    const status = ({ new: 'Waiting for the detailer to confirm', confirmed: 'Confirmed by your detailer', declined: 'Declined: the detailer can’t make it. You weren’t charged.', completed: 'Done' })[b.status || 'new'] || String(b.status).replace(/^./, c => c.toUpperCase());
     const bits = [b.detailerName ? 'with ' + esc(b.detailerName) : '', b.preferredTime ? esc(b.preferredTime) : '', day(created(b))].filter(Boolean).join(' · ');
     return '<li><span class="t">' + esc(b.package || 'Detail') + (b.addons ? ' + ' + esc(b.addons) : '') + '</span>' +
       '<span class="p">' + (typeof amount === 'number' && amount > 0 ? money(amount) : '') + '</span>' +
@@ -182,8 +206,54 @@ function renderDetailer(apps, isLiveNow){
     '<p class="empty">' + (isLive ? 'Customers near you can see and book your listing. ' : 'Gleam reviews every application before it goes live. ') + 'To change your prices or add-ons, <a href="/detailers.html">send an updated application</a>.</p>';
 }
 
+
+// requests customers sent to this member's own listings (detailers only)
+let JOBS = [], jf = 'open';
+const LABEL = { new: 'New request', confirmed: 'Confirmed', declined: 'Declined', completed: 'Done' };
+function telHref(p){ const d = String(p || '').replace(/\D/g, ''); return d.length >= 10 ? (d.length === 10 ? '+1' + d : '+' + d) : ''; }
+function renderJobs(){
+  const box = $('jobs');
+  const list = JOBS.filter(j => jf === 'all' || j.status === 'new' || j.status === 'confirmed');
+  if (!list.length) { box.innerHTML = '<p class="empty">' + (JOBS.length ? 'Nothing to do right now. Tap All to see past requests.' : 'No requests yet. When a customer books you, it shows up here.') + '</p>'; return; }
+  box.innerHTML = '<ul class="jobs">' + list.map(j => {
+    const tel = telHref(j.phone);
+    const where = j.serviceType === 'shop' ? 'At your shop' + (j.shopName ? ' (' + esc(j.shopName) + ')' : '') : esc([j.address, j.zip].filter(Boolean).join(' '));
+    const btns = j.status === 'new' ? '<button type="button" class="yes" data-act="confirm" data-id="' + esc(j._id) + '">Confirm</button><button type="button" data-act="decline" data-id="' + esc(j._id) + '">Decline</button>'
+      : j.status === 'confirmed' ? '<button type="button" class="yes" data-act="done" data-id="' + esc(j._id) + '">Mark done</button><button type="button" data-act="decline" data-id="' + esc(j._id) + '">Cancel</button>' : '';
+    return '<li class="job' + (j.status === 'new' ? ' new' : '') + '"><span class="t">' + esc(j.package || 'Detail') + (j.addons ? ' + ' + esc(j.addons) : '') + '</span>' +
+      '<span class="p">' + (j.total > 0 ? money(j.total) : '') + '</span>' +
+      '<span class="when">' + esc(j.preferredTime || 'Flexible time') + '</span>' +
+      '<span class="s">' + esc(j.customerName) + ' · ' + where + '</span>' +
+      (j.notes ? '<span class="s">“' + esc(j.notes) + '”</span>' : '') +
+      '<span class="s">' + esc(LABEL[j.status] || j.status) + ' · sent ' + day(created(j)) + (JOBS.some(x => x.listing !== j.listing) ? ' · ' + esc(j.listing) : '') + '</span>' +
+      '<div class="row">' + (tel && (j.status === 'new' || j.status === 'confirmed') ? '<a class="call" href="tel:' + tel + '">Call</a><a class="call" href="sms:' + tel + '">Text</a>' : '') + btns + '</div><p class="err" role="alert"></p></li>';
+  }).join('') + '</ul>';
+}
+async function loadJobs(){
+  try {
+    const r = await api('/api/detailer-bookings');
+    if (!r.detailer) return;
+    JOBS = r.items || []; $('jobsCard').hidden = false; renderJobs();
+  } catch (e) { /* not a detailer, or offline: keep the card hidden */ }
+}
+document.addEventListener('click', async e => {
+  const f = e.target.closest('[data-jf]');
+  if (f) { jf = f.dataset.jf; document.querySelectorAll('[data-jf]').forEach(b => b.setAttribute('aria-pressed', String(b === f))); renderJobs(); return; }
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const li = b.closest('.job'), err = li.querySelector('.err');
+  if (b.dataset.act === 'decline' && !confirm('Decline this request? The customer will be told you can’t make it.')) return;
+  li.querySelectorAll('button').forEach(x => x.disabled = true); err.textContent = '';
+  try {
+    const r = await api('/api/detailer-bookings', { method: 'POST', body: { id: b.dataset.id, action: b.dataset.act } });
+    const j = JOBS.find(x => x._id === b.dataset.id); if (j) j.status = r.status; renderJobs();
+  } catch (x) {
+    li.querySelectorAll('button').forEach(y => y.disabled = false);
+    err.textContent = x.status === 409 ? 'This request was already updated. Refresh to see the latest.' : 'That didn’t go through. Check your connection and try again.';
+  }
+});
 async function loadData(){
   if (loaded) return; loaded = true;
+  loadJobs();
   const [b, d] = await Promise.allSettled([myBookings(), myApplication()]);
   if (b.status === 'fulfilled') renderBookings(b.value); else $('bookings').innerHTML = '<p class="empty">We couldn’t load your requests right now. Refresh to try again.</p>';
   if (d.status === 'fulfilled') renderDetailer(d.value.apps, d.value.live); else $('detailer').innerHTML = '<p class="empty">We couldn’t load your detailer details right now. Refresh to try again.</p>';
