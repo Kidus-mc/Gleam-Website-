@@ -95,7 +95,8 @@ export async function register(email, password, profile = {}, returnTo = '/') {
   });
   if (error) return { ok: false, errorCode: friendly(error) };
   // Supabase hides whether an email is taken: a known address comes back with no identities.
-  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) return { ok: false, errorCode: 'emailAlreadyExists' };
+  // Answer the same way either way, so the sign-up form can't be used to check who has an account.
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) return { ok: true, checkEmail: true };
   return data.session ? { ok: true } : { ok: true, checkEmail: true };
 }
 
