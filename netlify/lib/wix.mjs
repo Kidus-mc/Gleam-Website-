@@ -84,3 +84,12 @@ export async function listingsForMember(member) {
   const l = await wixAdmin('/wix-data/v2/items/query', { dataCollectionId: 'Detailers', query: { filter: { applicationId: { $in: ids } }, paging: { limit: 50 } } });
   return (l.dataItems || []).map(x => ({ id: x.id, ...(x.data || {}) }));
 }
+
+// Gleam's own team (owner, co-owners), kept in the admin-only Wix list "TeamRoles".
+export async function teamRole(member) {
+  if (!member || !member.email) return null;
+  const r = await wixAdmin('/wix-data/v2/items/query', { dataCollectionId: 'TeamRoles', query: { filter: { email: member.email }, paging: { limit: 1 } } });
+  const v = ((r.dataItems || [])[0] || {}).data || {};
+  const role = String(v.role || '').toLowerCase();
+  return role === 'owner' || role === 'co-owner' ? { role, name: String(v.name || '') } : null;
+}

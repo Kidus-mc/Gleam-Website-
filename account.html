@@ -117,6 +117,7 @@
       <p class="acct-meta" id="meta"></p>
       <div class="acct-actions">
         <a class="pill" href="/#packages">Book a detail</a>
+        <a class="pill" href="/admin.html" id="ownerLink" hidden>Owner page</a>
         <button type="button" class="ghost" id="logoutBtn">Log out</button>
       </div>
 
@@ -254,6 +255,7 @@ document.addEventListener('click', async e => {
 async function loadData(){
   if (loaded) return; loaded = true;
   loadJobs();
+  api('/api/admin?check=1').then(r => { if (r && r.role) $('ownerLink').hidden = false; }).catch(() => {});
   const [b, d] = await Promise.allSettled([myBookings(), myApplication()]);
   if (b.status === 'fulfilled') renderBookings(b.value); else $('bookings').innerHTML = '<p class="empty">We couldn’t load your requests right now. Refresh to try again.</p>';
   if (d.status === 'fulfilled') renderDetailer(d.value.apps, d.value.live); else $('detailer').innerHTML = '<p class="empty">We couldn’t load your detailer details right now. Refresh to try again.</p>';
