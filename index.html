@@ -1231,6 +1231,8 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   function keepFields(){ if(!B) return; bkBody.querySelectorAll('[data-f]').forEach(i=>B.f[i.dataset.f]=i.value) }
   const opt=(attrs,checked,main,sub,price,sq)=>'<button type="button" class="bk-opt'+(sq?' sq':'')+'" role="'+(sq?'checkbox':'radio')+'" aria-checked="'+checked+'" '+attrs+'><span><b>'+main+'</b>'+(sub?'<small>'+sub+'</small>':'')+'</span>'+(price!=null?'<span class="p">'+price+'</span>':'')+'<span class="ck">'+CHECK+'</span></button>';
   function paint(dir){
+    // a tap inside a step (date, time, service) redraws it in place: keep the sheet and the date row where they were
+    const keepY=dir==='same'?bkBody.scrollTop:0, dz=bkBody.querySelector('.bk-days'), keepX=dir==='same'&&dz?dz.scrollLeft:0;
     const d=B.d, A=adds(d), cls='bk-step'+(dir==='back'?' back':'');
     bkDots.forEach((x,i)=>x.classList.toggle('on',i===Math.min(B.step,2)));
     bkFoot.hidden=B.step===3; bkBack.style.visibility=B.step===3?'hidden':'visible';
@@ -1277,7 +1279,9 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
         (shop&&offersShop(d)?mapBlock(d):'')+
         '<button type="button" class="bk-go" data-bk-close style="margin-top:2rem;max-width:20rem">Done</button></div>';
     }
-    bkBody.innerHTML=h; bkBody.scrollTop=0;
+    bkBody.innerHTML=h;
+    const dz2=bkBody.querySelector('.bk-days'); if(dz2) dz2.scrollLeft=keepX;
+    bkBody.scrollTop=keepY;
   }
   bkBody.addEventListener('click',e=>{
     const t=e.target.closest('button'); if(!t||t.disabled) return;
