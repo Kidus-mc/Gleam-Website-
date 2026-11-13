@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <script>/* one site: the Wix copy sends people to Gleam on Netlify */if(/wix-site-host\.com$/.test(location.hostname))location.replace('https://allgleam.netlify.app'+location.pathname+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>/* login wall: members only */(function(){try{var t=JSON.parse(localStorage.getItem('sb-huskusxmuyxiucufcmkv-auth-token')||'null');if(t&&t.refresh_token)return}catch(e){}document.documentElement.style.visibility='hidden';location.replace('/login.html?returnTo='+encodeURIComponent(location.pathname+location.search+location.hash))})()</script>
 <script>if(location.protocol==='http:'&&!/^(localhost|127\.)/.test(location.hostname))location.replace('https:'+location.href.slice(5))</script>
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Gleam Car Detailing | Mobile Car Detailing That Comes to You</title>
@@ -1267,8 +1266,9 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
         '<label class="bk-f"><span>Notes (optional)</span><textarea data-f="notes" maxlength="300" placeholder="Car make and model, where it’s parked">'+esc(f.notes)+'</textarea></label>'+
         '<label class="hp" aria-hidden="true">Leave this empty<input data-f="website" tabindex="-1" autocomplete="off"></label>'+
         '<div class="bk-sum"><p><span>'+(B.k==='addons'?'Add-ons':PKG[B.k])+'</span><b>'+(B.k==='addons'?'':fmt(priceOf(d,B.k)))+'</b></p>'+[...B.adds].map(i=>'<p><span>'+esc(A[i].name)+'</span><b>+'+fmt(A[i].price)+'</b></p>').join('')+'<p><span>When</span><b>'+esc(dayLabel(B.day))+' · '+(B.time==='any'?'Any time':B.time)+'</b></p><p><span>Total</span><b>'+fmt(bkTotal())+'</b></p></div>'+
+        (signedIn()?'':'<p class="bk-note" style="margin:0 0 0.75rem">Next you’ll log in or create a free account (Google works too). You’ll come right back here with everything filled in.</p>')+
         '<p class="bk-legal">No charge now. By sending a request you agree to our <a href="/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p></div>';
-      bkGo.disabled=false; bkGo.textContent='Request · '+shortWhen()+' · '+fmt(bkTotal());
+      bkGo.disabled=false; bkGo.textContent=(signedIn()?'Request · ':'Log in to request · ')+shortWhen()+' · '+fmt(bkTotal());
     } else {
       const shop=B.where==='shop';
       h='<div class="bk-done"><span class="bk-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>'+
@@ -1293,6 +1293,24 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     const f=bkBody.querySelector('[data-'+(t.dataset.k?'k="'+t.dataset.k:t.dataset.a!=null?'a="'+t.dataset.a:t.dataset.w?'w="'+t.dataset.w:t.dataset.day!=null?'day="'+t.dataset.day:'time="'+t.dataset.time)+'"]'); if(f) f.focus({preventScroll:true});
   });
   bk.addEventListener('click',e=>{ if(e.target.closest('[data-bk-close]')) closeBook() });
+  // back from logging in: reopen their request on the last step, filled in
+  (function resumeDraft(){
+    if(!/[?&]resume=1/.test(location.search)) return;
+    let dr=null; try{ dr=JSON.parse(sessionStorage.getItem('gleam-draft')||'null') }catch(e){}
+    try{ history.replaceState(null,'',location.pathname+location.hash) }catch(e){}
+    if(!dr||!signedIn()) return;
+    let tries=0;
+    (function wait(){
+      if(loadState!=='ready'){ if(++tries<60) setTimeout(wait,250); return }
+      const d=DETAILERS.find(x=>x._id===dr.id); if(!d) return;
+      try{ sessionStorage.removeItem('gleam-draft') }catch(e){}
+      openBook(d,dr.k);
+      const di=days().findIndex(x=>x.toDateString()===dr.date);
+      B.adds=new Set(dr.adds||[]); B.where=dr.where||B.where; Object.assign(B.f,dr.f||{}); B.t=0;
+      if(di>=0&&dr.time&&(dr.time==='any'||!past(di,dr.time))){ B.day=di; B.time=dr.time; B.step=2 } else B.step=1;
+      paint();
+    })();
+  })();
   bkBody.addEventListener('input',e=>{ if(e.target.getAttribute('aria-invalid')){ e.target.removeAttribute('aria-invalid'); bkErr.textContent='' } });
   bkBack.addEventListener('click',()=>{ if(B.step===0) return closeBook(); keepFields(); B.step--; bkErr.textContent=''; paint('back'); setTimeout(()=>{ const h=document.getElementById('bkTitle'); if(h) h.focus({preventScroll:true}) },30) });
   bkGo.addEventListener('click',async()=>{
@@ -1307,6 +1325,8 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     if(B.where==='mobile'&&v('address').length<6) return bad('Add the street address where your car will be.','address');
     if(v('email')&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('email'))) return bad('Check your email address, or leave it blank.','email');
     if(LINK.test(v('notes'))) return bad('Please remove links from your notes.','notes');
+    // Not logged in: keep the request in this tab only, log in, then come back to it filled in.
+    if(!signedIn()){ try{ sessionStorage.setItem('gleam-draft',JSON.stringify({id:d._id,k:B.k,adds:[...B.adds],where:B.where,date:days()[B.day].toDateString(),time:B.time,f:{customerName:v('customerName'),phone:v('phone'),email:v('email'),address:v('address'),notes:v('notes')}})) }catch(e){} location.assign('/login.html?returnTo='+encodeURIComponent('/?resume=1')); return; }
     const RL='gleam-req', now=Date.now(); let log=[]; try{ log=JSON.parse(localStorage.getItem(RL)||'[]').filter(t=>now-t<36e5) }catch(e){}
     if(v('website')||now-B.t<4000){ B.step=3; paint(); return }
     if(log.length>=3) return bad('You’ve sent several requests in the last hour. Your detailers will be in touch soon.');
@@ -1318,7 +1338,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
         address:B.where==='mobile'?v('address'):'',zip:custLoc?custLoc.zip:'',preferredTime:dayLabel(B.day)+' · '+(B.time==='any'?'Any time':B.time),notes:v('notes')})});
       if(!r.ok){
         if(r.status===429){ bkGo.disabled=false; paint('same'); return bad('You’ve sent several requests in the last hour. Your detailers will be in touch soon.') }
-        if(r.status===401){ location.assign('/login.html?returnTo=/'); return }
+        if(r.status===401){ try{ sessionStorage.setItem('gleam-draft',JSON.stringify({id:d._id,k:B.k,adds:[...B.adds],where:B.where,date:days()[B.day].toDateString(),time:B.time,f:{customerName:v('customerName'),phone:v('phone'),email:v('email'),address:v('address'),notes:v('notes')}})) }catch(e){} location.assign('/login.html?returnTo='+encodeURIComponent('/?resume=1')); return; }
         throw new Error('book '+r.status);
       }
       log.push(Date.now()); try{ localStorage.setItem(RL,JSON.stringify(log)) }catch(e){}

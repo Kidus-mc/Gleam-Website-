@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <script>/* one site: the Wix copy sends people to Gleam on Netlify */if(/wix-site-host\.com$/.test(location.hostname))location.replace('https://allgleam.netlify.app'+location.pathname+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>/* login wall: members only */(function(){try{var t=JSON.parse(localStorage.getItem('sb-huskusxmuyxiucufcmkv-auth-token')||'null');if(t&&t.refresh_token)return}catch(e){}document.documentElement.style.visibility='hidden';location.replace('/login.html?returnTo='+encodeURIComponent(location.pathname+location.search+location.hash))})()</script>
 <script>if(location.protocol==='http:'&&!/^(localhost|127\.)/.test(location.hostname))location.replace('https:'+location.href.slice(5))</script>
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Become a Detailer | Gleam Car Detailing</title>
@@ -185,6 +184,8 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
 .hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden}
 .agree a{color:var(--foreground);text-underline-offset:3px}
 [aria-invalid="true"]{border-color:var(--accent-2)!important}
+.apply-login{margin:0 0 24px;padding:14px 16px;border:1px solid var(--accent);border-radius:8px;font-size:15px;line-height:1.5}
+.apply-login a{color:var(--foreground);font-weight:600;text-decoration:underline;text-underline-offset:2px}
 </style>
 <link rel="stylesheet" href="/assets/theme.css">
 <script src="/assets/gleam.js" defer></script>
@@ -211,6 +212,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
     </section>
 
     <section class="card" aria-label="Detailer application">
+      <p class="apply-login" id="applyLogin" hidden>You’ll need a free Gleam account to apply, so we can tell you when you’re approved. <a href="/login.html?mode=signup&amp;returnTo=%2Fdetailers.html">Create an account or log in</a> first, then come back to this form.</p>
       <form id="applyForm" novalidate>
         <fieldset>
           <legend>About you</legend>
@@ -419,8 +421,10 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
     if(!$('agree').checked) return fail('Tick the box to confirm your details.',$('agree'));
     err.textContent=''; return true;
   }
+  if(!signedIn()) $('applyLogin').hidden=false;
   form.addEventListener('submit',async e=>{
     e.preventDefault(); if(!validate()) return;
+    if(!signedIn()){ err.innerHTML='Log in first so your application is saved. <a href="/login.html?returnTo=%2Fdetailers.html" target="_blank" rel="noopener">Log in in a new tab</a>, then tap Submit again here.'; return }
     const now=Date.now(); let log=[]; try{ log=JSON.parse(localStorage.getItem('gleam-apply')||'[]').filter(t=>now-t<864e5) }catch(e){}
     if($('website').value||now-T0<5000){ form.hidden=true; $('previewWrap').hidden=true; $('done').hidden=false; return }
     if(log.length>=2){ err.textContent='You’ve already applied today. We’ll review your application and contact you.'; return }

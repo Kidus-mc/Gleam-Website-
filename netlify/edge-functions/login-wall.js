@@ -26,4 +26,4 @@ export default async (request, context) => {
   return out;
 };
 
-export const config = { path: ['/', '/index', '/index.html', '/detailers', '/detailers.html', '/account', '/account.html', '/admin', '/admin.html'] };
+export const config = { path: ['/account', '/account.html', '/admin', '/admin.html'] };

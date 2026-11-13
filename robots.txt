@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /account.html
+Disallow: /admin.html
 
 Sitemap: https://allgleam.netlify.app/sitemap.xml
