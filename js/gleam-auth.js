@@ -1,13 +1,13 @@
 // Gleam member login (Supabase Auth). Gleam's data (bookings, detailers, profiles) stays in Wix,
 // reached only through Gleam's own /api/* server functions, which check this login.
-// Used by login.html, account.html, index.html and detailers.html. Readable source: no build step.
+// Used by login.html, account.html, admin.html, index.html and detailers.html. Readable source: no build step.
 
 import { AuthClient } from '/js/vendor/supabase-auth.js';
 
 // Public values (safe to show): the project address and its publishable key.
-export const SUPABASE_URL = 'https://huskusxmuyxiucufcmkv.supabase.co';
+const SUPABASE_URL = 'https://huskusxmuyxiucufcmkv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_rsLVPdoFlMhH4_k4khm4MA_YW25zBRS';
-export const STORAGE_KEY = 'sb-huskusxmuyxiucufcmkv-auth-token';
+const STORAGE_KEY = 'sb-huskusxmuyxiucufcmkv-auth-token';   // pages check this key to tell if someone is logged in
 // Things saved on this device for the logged-in person; wiped on logout.
 const PERSONAL_KEYS = ['gleam-zip', 'gleam-address', 'gleam-pending-profile', 'wix-visitor-ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b'];
 
@@ -77,10 +77,15 @@ function friendly(error) {
   return 'generic';
 }
 
+// What every login action returns: { ok: true } or { ok: false, errorCode } (see friendly()).
+const result = error => error ? { ok: false, errorCode: friendly(error) } : { ok: true };
+// Where Supabase sends people back to after a confirmation email or Google.
+const backTo = returnTo => location.origin + '/login.html?returnTo=' + encodeURIComponent(returnTo);
+
 export async function login(email, password) {
   await ready;
   const { error } = await auth.signInWithPassword({ email, password });
-  return error ? { ok: false, errorCode: friendly(error) } : { ok: true };
+  return result(error);
 }
 
 // { ok:true } when logged in straight away, { ok:true, checkEmail:true } when Supabase sent a confirmation link.
@@ -89,11 +94,11 @@ export async function register(email, password, profile = {}, returnTo = '/') {
   const { data, error } = await auth.signUp({
     email, password,
     options: {
-      emailRedirectTo: location.origin + '/login.html?returnTo=' + encodeURIComponent(returnTo),
+      emailRedirectTo: backTo(returnTo),
       data: { first_name: profile.firstName || '', last_name: profile.lastName || '' },
     },
   });
-  if (error) return { ok: false, errorCode: friendly(error) };
+  if (error) return result(error);
   // Supabase hides whether an email is taken: a known address comes back with no identities.
   // Answer the same way either way, so the sign-up form can't be used to check who has an account.
   if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) return { ok: true, checkEmail: true };
@@ -104,21 +109,21 @@ export async function loginWithGoogle(returnTo = '/') {
   await ready;
   const { error } = await auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: location.origin + '/login.html?returnTo=' + encodeURIComponent(returnTo) },
+    options: { redirectTo: backTo(returnTo) },
   });
-  return error ? { ok: false, errorCode: friendly(error) } : { ok: true };
+  return result(error);
 }
 
 export async function sendPasswordReset(email) {
   await ready;
   const { error } = await auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/login.html?reset=1' });
-  return error ? { ok: false, errorCode: friendly(error) } : { ok: true };
+  return result(error);
 }
 
 export async function updatePassword(password) {
   await ready;
   const { error } = await auth.updateUser({ password });
-  return error ? { ok: false, errorCode: friendly(error) } : { ok: true };
+  return result(error);
 }
 
 export async function accessToken() {
