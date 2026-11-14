@@ -23,6 +23,8 @@ export function sameOrigin(req) {
 
 export const clip = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
 export const LINK = /(https?:\/\/|www\.)/i;
+export const isEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+export const isId = v => /^[A-Za-z0-9-]{8,64}$/.test(v);   // Wix item IDs
 
 /* ---------- Who is calling (Supabase login) ---------- */
 
@@ -99,6 +101,19 @@ export const removeItem = (collection, id) => wixAdmin(itemPath(collection, id),
 
 /* ---------- Gleam's data ---------- */
 
+// Filter matching things a member owns: by login ID, or by the email they logged in with or put on the item.
+export function ownedBy(member) {
+  const or = [{ memberId: member.id }];
+  if (member.email) or.push({ memberEmail: member.email }, { email: member.email });
+  return { $or: or };
+}
+
+/** How many items this member created in the last `ms` milliseconds (counts up to `limit`). Used to slow down floods. */
+export async function recentCount(collection, memberId, ms, limit) {
+  const since = new Date(Date.now() - ms).toISOString();
+  return (await queryItems(collection, { filter: { memberId, _createdDate: { $gt: { $date: since } } }, paging: { limit } })).length;
+}
+
 // A detailer's private contact details live on their application, never on the public listing.
 export async function detailerContact(listing) {
   if (!listing || !listing.applicationId) return {};
@@ -110,9 +125,7 @@ export async function detailerContact(listing) {
 
 // The public listings that belong to this logged-in member (through their applications).
 export async function listingsForMember(member) {
-  const or = [{ memberId: member.id }];
-  if (member.email) or.push({ memberEmail: member.email }, { email: member.email });
-  const ids = (await queryItems('DetailerApplications', { filter: { $or: or }, paging: { limit: 50 } })).map(x => x.id);
+  const ids = (await queryItems('DetailerApplications', { filter: ownedBy(member), paging: { limit: 50 } })).map(x => x.id);
   if (!ids.length) return [];
   return (await queryItems('Detailers', { filter: { applicationId: { $in: ids } }, paging: { limit: 50 } }))
     .map(x => ({ id: x.id, ...(x.data || {}) }));

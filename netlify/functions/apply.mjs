@@ -1,5 +1,5 @@
 // Saves a detailer application for the logged-in member. Only known fields are kept.
-import { handle, memberFrom, sameOrigin, wixAdmin, json, clip, LINK } from '../lib/wix.mjs';
+import { handle, memberFrom, sameOrigin, json, clip, LINK, isEmail, insertItem, recentCount } from '../lib/wix.mjs';
 
 const MAX_PER_DAY = 3;
 const price = v => { const n = Math.round(Number(v) * 100) / 100; return n > 0 && n <= 5000 ? n : undefined; };
@@ -20,7 +20,7 @@ export default handle(async req => {
   };
   if (Object.values(d).some(v => v === null)) return json(400, { error: 'links' });
   if (!d.name || d.name.length < 2) return json(400, { error: 'name' });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email)) return json(400, { error: 'email' });
+  if (!isEmail(d.email)) return json(400, { error: 'email' });
   const digits = d.phone.replace(/\D/g, '');
   if (digits.length < 10 || digits.length > 15) return json(400, { error: 'phone' });
   if (!/^\d{5}$/.test(d.zip)) return json(400, { error: 'zip' });
@@ -39,13 +39,10 @@ export default handle(async req => {
   if (!photos.length) return json(400, { error: 'photos' });
   d.workPhotos = photos;
 
-  const since = new Date(Date.now() - 86400_000).toISOString();
-  const recent = await wixAdmin('/wix-data/v2/items/query', { dataCollectionId: 'DetailerApplications',
-    query: { filter: { memberId: member.id, _createdDate: { $gt: { $date: since } } }, paging: { limit: MAX_PER_DAY } } });
-  if ((recent.dataItems || []).length >= MAX_PER_DAY) return json(429, { error: 'too_many' });
+  if (await recentCount('DetailerApplications', member.id, 86400_000, MAX_PER_DAY) >= MAX_PER_DAY) return json(429, { error: 'too_many' });
 
   for (const k of Object.keys(d)) if (d[k] === undefined || d[k] === '') delete d[k];
-  await wixAdmin('/wix-data/v2/items', { dataCollectionId: 'DetailerApplications', dataItem: { data: { ...d, status: 'pending', memberId: member.id, memberEmail: member.email } } });
+  await insertItem('DetailerApplications', { ...d, status: 'pending', memberId: member.id, memberEmail: member.email });
   return json(200, { ok: true });
 });
 

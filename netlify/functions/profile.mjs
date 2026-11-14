@@ -1,10 +1,9 @@
 // The logged-in member's own saved ZIP code and street address (stored in Wix, keyed by their Supabase login).
-import { handle, memberFrom, sameOrigin, wixAdmin, json, clip, LINK } from '../lib/wix.mjs';
+import { handle, memberFrom, sameOrigin, json, clip, LINK, queryItems, insertItem, replaceItem } from '../lib/wix.mjs';
 
 async function find(memberId) {
-  const q = await wixAdmin('/wix-data/v2/items/query', { dataCollectionId: 'MemberProfiles',
-    query: { filter: { memberId }, sort: [{ fieldName: '_updatedDate', order: 'DESC' }], paging: { limit: 1 } } });
-  return (q.dataItems || [])[0] || null;
+  const [item] = await queryItems('MemberProfiles', { filter: { memberId }, sort: [{ fieldName: '_updatedDate', order: 'DESC' }], paging: { limit: 1 } });
+  return item || null;
 }
 
 export default handle(async req => {
@@ -20,8 +19,8 @@ export default handle(async req => {
   if (!/^\d{5}$/.test(zip)) return json(400, { error: 'zip' });
   if (LINK.test(address)) return json(400, { error: 'address' });
   const data = { zip, address, memberId: member.id, memberEmail: member.email };
-  if (item) await wixAdmin('/wix-data/v2/items/' + item.id, { dataCollectionId: 'MemberProfiles', dataItem: { id: item.id, data } }, 'PUT');
-  else await wixAdmin('/wix-data/v2/items', { dataCollectionId: 'MemberProfiles', dataItem: { data } });
+  if (item) await replaceItem('MemberProfiles', item.id, data);
+  else await insertItem('MemberProfiles', data);
   return json(200, { zip, address });
 });
 

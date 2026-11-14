@@ -1,14 +1,14 @@
 // Saves a booking request. The price is worked out HERE from the detailer's own listing,
 // so nothing the customer's browser sends can change it.
-import { handle, memberFrom, sameOrigin, wixAdmin, json, clip, LINK, detailerContact } from '../lib/wix.mjs';
+import { handle, memberFrom, sameOrigin, json, clip, LINK, isEmail, isId, getItem, insertItem, recentCount, detailerContact } from '../lib/wix.mjs';
 import { sendEmail, sendText, quietly, adminEmail, adminPhone } from '../lib/notify.mjs';
 
 const PRICE_KEY = { exterior: 'priceExterior', interior: 'priceInterior', full: 'priceFull' };
 const NAMES = { exterior: 'Exterior', interior: 'Interior', full: 'Full Detail', addons: 'Add-ons' };
-const FEE_RATE = 0; // no Gleam service fee
+const FEE_RATE = 0;       // no Gleam service fee
+const MAX_PER_HOUR = 5;   // booking requests per member
 const r2 = x => Math.round(x * 100) / 100;
 const money = v => '$' + (Math.round(v * 100) % 100 ? v.toFixed(2) : Math.round(v));
-const MAX_PER_HOUR = 5;
 
 export default handle(async (req, ctx) => {
   if (req.method !== 'POST') return json(405, { error: 'method' });
@@ -19,21 +19,21 @@ export default handle(async (req, ctx) => {
   const pkg = String(b.package || '');
   if (!NAMES[pkg]) return json(400, { error: 'package' });
   const detailerId = clip(b.detailerId, 64);
-  if (!/^[A-Za-z0-9-]{8,64}$/.test(detailerId)) return json(400, { error: 'detailer' });
+  if (!isId(detailerId)) return json(400, { error: 'detailer' });
   const customerName = clip(b.customerName, 80), phone = clip(b.phone, 30), email = clip(b.email, 120);
   const address = clip(b.address, 150), zip = clip(b.zip, 5), preferredTime = clip(b.preferredTime, 80), notes = clip(b.notes, 500);
   const serviceType = b.serviceType === 'shop' ? 'shop' : 'mobile';
   const digits = phone.replace(/\D/g, '');
   if (customerName.length < 2 || LINK.test(customerName)) return json(400, { error: 'name' });
   if (digits.length < 10 || digits.length > 15) return json(400, { error: 'phone' });
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return json(400, { error: 'email' });
+  if (email && !isEmail(email)) return json(400, { error: 'email' });
   if (serviceType === 'mobile' && (address.length < 6 || LINK.test(address))) return json(400, { error: 'address' });
   if (zip && !/^\d{5}$/.test(zip)) return json(400, { error: 'zip' });
   if (LINK.test(notes) || LINK.test(preferredTime)) return json(400, { error: 'links' });
 
   // The real prices come from the detailer's listing, which only Gleam can edit.
   let d;
-  try { d = (await wixAdmin('/wix-data/v2/items/' + encodeURIComponent(detailerId) + '?dataCollectionId=Detailers', undefined, 'GET')).dataItem.data; }
+  try { d = await getItem('Detailers', detailerId); }
   catch (e) { if (e.status === 404) return json(400, { error: 'detailer' }); throw e; }
   // Mobile (detailer drives to the customer) and/or a shop the customer visits.
   const offersMobile = d.serviceShop ? !!d.serviceMobile : true;
@@ -51,19 +51,16 @@ export default handle(async (req, ctx) => {
   const subtotal = r2(base + picked.reduce((s, a) => s + +a.price, 0));
   const serviceFee = r2(subtotal * FEE_RATE), total = r2(subtotal + serviceFee);
 
-  // Slow down floods: at most 5 requests per member per hour.
-  const since = new Date(Date.now() - 3600_000).toISOString();
-  const recent = await wixAdmin('/wix-data/v2/items/query', { dataCollectionId: 'BookingRequests',
-    query: { filter: { memberId: member.id, _createdDate: { $gt: { $date: since } } }, paging: { limit: MAX_PER_HOUR } } });
-  if ((recent.dataItems || []).length >= MAX_PER_HOUR) return json(429, { error: 'too_many' });
+  if (await recentCount('BookingRequests', member.id, 3600_000, MAX_PER_HOUR) >= MAX_PER_HOUR) return json(429, { error: 'too_many' });
 
-  await wixAdmin('/wix-data/v2/items', { dataCollectionId: 'BookingRequests', dataItem: { data: {
+  await insertItem('BookingRequests', {
     customerName, phone, email, address: serviceType === 'mobile' ? address : '', zip, preferredTime, notes,
     serviceType, ...(serviceType === 'shop' ? { shopName: String(d.shopName || ''), shopAddress } : {}),
     package: NAMES[pkg], detailerId, detailerName: String(d.name || ''),
     price: base, addons: picked.map(a => a.name + ' ' + money(+a.price)).join(' · '),
     subtotal, serviceFee, total, status: 'new', memberId: member.id, memberEmail: member.email, checkedBy: 'server',
-  } } });
+  });
+
   // Tell the detailer (and Gleam) right away. A failed alert never fails the booking.
   const who = String(d.name || 'your detailer'), what = NAMES[pkg] + (picked.length ? ' + ' + picked.map(a => a.name).join(', ') : '');
   const where = serviceType === 'shop' ? 'At your shop' : 'At ' + address + (zip ? ' ' + zip : '');
