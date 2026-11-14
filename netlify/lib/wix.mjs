@@ -1,9 +1,51 @@
 // Shared server helpers for Gleam's Netlify functions.
 // The Wix client secret lives ONLY in Netlify's environment variables (WIX_CLIENT_SECRET), never in the site code.
-const WIX = 'https://www.wixapis.com';
-const CLIENT_ID = 'ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b'; // public Wix client ID
 
 const fail = (status, code) => Object.assign(new Error(code), { status, code });
+
+/* ---------- Requests and responses ---------- */
+
+export const json = (status, obj) => new Response(JSON.stringify(obj), {
+  status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+});
+
+// Wraps a function so any thrown { status, code } becomes a JSON error response.
+export const handle = fn => async (req, ctx) => {
+  try { return await fn(req, ctx); }
+  catch (e) { return json(e.status || 500, { error: e.code || 'server_error' }); }
+};
+
+// Only accept calls made from Gleam's own pages.
+export function sameOrigin(req) {
+  const o = req.headers.get('origin');
+  if (o && new URL(o).host !== new URL(req.url).host) throw fail(403, 'forbidden');
+}
+
+export const clip = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
+export const LINK = /(https?:\/\/|www\.)/i;
+
+/* ---------- Who is calling (Supabase login) ---------- */
+
+// Supabase handles Gleam logins. These two values are public (they're also in the pages).
+export const SUPABASE_URL = 'https://huskusxmuyxiucufcmkv.supabase.co';
+export const SUPABASE_KEY = 'sb_publishable_rsLVPdoFlMhH4_k4khm4MA_YW25zBRS';
+
+// Asks Supabase to confirm the person's own login token.
+export async function memberFrom(req) {
+  const raw = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!raw || raw.length > 4000) throw fail(401, 'login_required');
+  const r = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + raw } });
+  if (!r.ok) throw fail(401, 'login_required');
+  const u = await r.json().catch(() => null);
+  if (!u || !u.id) throw fail(401, 'login_required');
+  return { id: u.id, email: String(u.email || '').toLowerCase() };
+}
+
+/* ---------- Calling Wix as the site owner ---------- */
+
+const WIX = 'https://www.wixapis.com';
+const CLIENT_ID = 'ea2ece4b-eb1c-48a5-aae5-b77fd4593c4b'; // public Wix client ID
+const ITEMS = '/wix-data/v2/items';
 
 let admin = null;
 async function adminToken() {
@@ -20,7 +62,7 @@ async function adminToken() {
   return admin.token;
 }
 
-// Calls Wix as the site owner. Only ever used after the caller has been checked.
+// Only ever used after the caller has been checked.
 export async function wixAdmin(path, body, method = 'POST') {
   const r = await fetch(WIX + path, {
     method,
@@ -32,44 +74,36 @@ export async function wixAdmin(path, body, method = 'POST') {
   return d;
 }
 
-// Supabase handles Gleam logins. These two values are public (they're also in the pages).
-export const SUPABASE_URL = 'https://huskusxmuyxiucufcmkv.supabase.co';
-export const SUPABASE_KEY = 'sb_publishable_rsLVPdoFlMhH4_k4khm4MA_YW25zBRS';
+// Item helpers for Wix's data lists ("collections").
+const itemPath = (collection, id) => ITEMS + '/' + encodeURIComponent(id) + (collection ? '?dataCollectionId=' + collection : '');
 
-// Who is calling? Asks Supabase to confirm the person's own login token.
-export async function memberFrom(req) {
-  const raw = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
-  if (!raw || raw.length > 4000) throw fail(401, 'login_required');
-  const r = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + raw } });
-  if (!r.ok) throw fail(401, 'login_required');
-  const u = await r.json().catch(() => null);
-  if (!u || !u.id) throw fail(401, 'login_required');
-  return { id: u.id, email: String(u.email || '').toLowerCase() };
-}
+/** Raw Wix items ({ id, data }) matching a Wix query object. */
+export const queryItems = async (collection, query) =>
+  (await wixAdmin(ITEMS + '/query', { dataCollectionId: collection, query })).dataItems || [];
 
-// Only accept calls made from Gleam's own pages.
-export function sameOrigin(req) {
-  const o = req.headers.get('origin');
-  if (o && new URL(o).host !== new URL(req.url).host) throw fail(403, 'forbidden');
-}
+/** One item's data. Throws { status: 404 } if it doesn't exist. */
+export const getItem = async (collection, id) =>
+  (await wixAdmin(itemPath(collection, id), undefined, 'GET')).dataItem.data;
 
-export const json = (status, obj) => new Response(JSON.stringify(obj), {
-  status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-});
+export const insertItem = (collection, data) =>
+  wixAdmin(ITEMS, { dataCollectionId: collection, dataItem: { data } });
 
-export const handle = fn => async (req, ctx) => {
-  try { return await fn(req, ctx); }
-  catch (e) { return json(e.status || 500, { error: e.code || 'server_error' }); }
+/** Replaces an item's whole data. Wix sets its own created/updated dates, so those are left out. */
+export const replaceItem = (collection, id, data) => {
+  const d = { ...data };
+  delete d._createdDate; delete d._updatedDate;
+  return wixAdmin(itemPath('', id), { dataCollectionId: collection, dataItem: { id, data: d } }, 'PUT');
 };
 
-export const clip = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
-export const LINK = /(https?:\/\/|www\.)/i;
+export const removeItem = (collection, id) => wixAdmin(itemPath(collection, id), undefined, 'DELETE');
+
+/* ---------- Gleam's data ---------- */
 
 // A detailer's private contact details live on their application, never on the public listing.
 export async function detailerContact(listing) {
   if (!listing || !listing.applicationId) return {};
   try {
-    const a = (await wixAdmin('/wix-data/v2/items/' + encodeURIComponent(listing.applicationId) + '?dataCollectionId=DetailerApplications', undefined, 'GET')).dataItem.data || {};
+    const a = (await getItem('DetailerApplications', listing.applicationId)) || {};
     return { email: String(a.email || a.memberEmail || ''), phone: String(a.phone || '') };
   } catch (e) { return {}; }
 }
@@ -78,18 +112,16 @@ export async function detailerContact(listing) {
 export async function listingsForMember(member) {
   const or = [{ memberId: member.id }];
   if (member.email) or.push({ memberEmail: member.email }, { email: member.email });
-  const apps = await wixAdmin('/wix-data/v2/items/query', { dataCollectionId: 'DetailerApplications', query: { filter: { $or: or }, paging: { limit: 50 } } });
-  const ids = (apps.dataItems || []).map(x => x.id);
+  const ids = (await queryItems('DetailerApplications', { filter: { $or: or }, paging: { limit: 50 } })).map(x => x.id);
   if (!ids.length) return [];
-  const l = await wixAdmin('/wix-data/v2/items/query', { dataCollectionId: 'Detailers', query: { filter: { applicationId: { $in: ids } }, paging: { limit: 50 } } });
-  return (l.dataItems || []).map(x => ({ id: x.id, ...(x.data || {}) }));
+  return (await queryItems('Detailers', { filter: { applicationId: { $in: ids } }, paging: { limit: 50 } }))
+    .map(x => ({ id: x.id, ...(x.data || {}) }));
 }
 
 // Gleam's own team (owner, co-owners), kept in the admin-only Wix list "TeamRoles".
 export async function teamRole(member) {
   if (!member || !member.email) return null;
-  const r = await wixAdmin('/wix-data/v2/items/query', { dataCollectionId: 'TeamRoles', query: { filter: { email: member.email }, paging: { limit: 1 } } });
-  const v = ((r.dataItems || [])[0] || {}).data || {};
+  const v = ((await queryItems('TeamRoles', { filter: { email: member.email }, paging: { limit: 1 } }))[0] || {}).data || {};
   const role = String(v.role || '').toLowerCase();
   return role === 'owner' || role === 'co-owner' ? { role, name: String(v.name || '') } : null;
 }

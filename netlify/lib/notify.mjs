@@ -14,7 +14,7 @@ const env = k => (process.env[k] || '').trim();
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const SITE = 'https://allgleam.netlify.app';
 
-export function toE164(phone) {
+function toE164(phone) {
   const d = String(phone || '').replace(/\D/g, '');
   if (d.length === 10) return '+1' + d;
   if (d.length === 11 && d[0] === '1') return '+' + d;
@@ -53,5 +53,6 @@ export function quietly(ctx, work) {
   return p;
 }
 
+// Gleam's own copy of every booking (optional).
 export const adminEmail = () => env('ADMIN_EMAIL');
 export const adminPhone = () => env('ADMIN_PHONE');
