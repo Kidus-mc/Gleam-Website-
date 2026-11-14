@@ -271,9 +271,9 @@ html.js .who-figure[data-reveal].in{transform:none}
 [hidden]{display:none!important}
 .zip-form{display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.5rem}
 .zip-row{display:flex;flex-wrap:wrap;gap:0.5rem}
-.zip-row input,.d-form input{font:inherit;font-size:max(16px,1rem);color:var(--foreground);background:var(--background);border:1px solid var(--line-strong);border-radius:0.5rem;padding:0 1rem;min-height:2.75rem;min-width:0;width:100%}
+.zip-row input{font:inherit;font-size:max(16px,1rem);color:var(--foreground);background:var(--background);border:1px solid var(--line-strong);border-radius:0.5rem;padding:0 1rem;min-height:2.75rem;min-width:0;width:100%}
 .zip-row input{flex:1 1 8rem;width:auto;letter-spacing:0.08em;font-variant-numeric:tabular-nums}
-.zip-row input:focus-visible,.d-form input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.zip-row input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .zip-go{min-height:2.75rem;padding:0 1.25rem;border-radius:9999px;background:var(--foreground);color:var(--background);font-size:var(--fs-eyebrow);font-weight:600;text-transform:uppercase;letter-spacing:0.14em;transition:background-color 300ms ease-out}
 .zip-go:hover{background:var(--chrome)}
 .zip-note{font-size:0.9375rem;color:var(--muted);min-height:1.5em}
@@ -317,16 +317,7 @@ html.js .who-figure[data-reveal].in{transform:none}
 @media (max-width:767px){.site-nav .nav-right{gap:0.625rem}}
 .d-empty{padding-block:2rem;color:var(--muted);border-bottom:1px solid var(--line);opacity:1!important;transform:none!important}
 .d-empty a,.drawer-foot a{color:var(--foreground);text-decoration:underline;text-underline-offset:3px}
-.d-form{width:100%;display:flex;flex-direction:column;gap:1rem}
-.f-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:0.75rem}
 .f{display:flex;flex-direction:column;gap:0.375rem;font-size:0.875rem;color:var(--muted)}
-.f-wide{grid-column:1/-1}
-.f-err{color:var(--accent-2);font-size:0.9375rem}
-.f-err:empty{display:none}
-.f-actions{display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center}
-.d-cancel{min-height:2.75rem;padding:0 1rem;color:var(--muted);font-size:var(--fs-eyebrow);text-transform:uppercase;letter-spacing:0.14em}
-.d-cancel:hover{color:var(--foreground)}
-.d-book[disabled]{opacity:0.6;cursor:progress}
 
 /* ---------- package picker + detailer drawer ---------- */
 .pkg-note{margin-top:1rem;max-width:44ch;color:var(--muted)}
@@ -468,11 +459,8 @@ html.js .who-figure[data-reveal].in{transform:none}
 .d-price{text-align:right}
 body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(safe-area-inset-bottom,0px))}
 .hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden}
-.f-legal{margin-top:0.75rem;font-size:0.8125rem;color:var(--muted)}.f-legal a{color:var(--foreground);text-decoration:underline;text-underline-offset:3px}
-.d-form [aria-invalid="true"]{border-color:var(--accent-2)}
 .foot-legal{display:flex;flex-direction:column;gap:0.75rem}
 .legal-links{display:flex;flex-wrap:wrap;gap:0.5rem 1.25rem}.legal-links a,.legal-links button{color:var(--muted);font:inherit;letter-spacing:inherit;text-transform:inherit;transition:color 300ms ease-out}.legal-links a:hover,.legal-links button:hover{color:var(--foreground)}
-.f-sum{display:flex;flex-wrap:wrap;gap:0.35rem 1.1rem;align-items:baseline;margin:0.9rem 0 0;font-size:0.9rem}.f-sum:empty{display:none}.f-sum span{opacity:0.75}.f-sum b{font-weight:600}
 .d-price b{display:block;font-family:var(--font-display);font-weight:400;font-size:3rem;line-height:1;letter-spacing:-0.01em;font-variant-numeric:tabular-nums}
 .d-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:1rem}
 .d-book{display:inline-flex;align-items:center;min-height:2.75rem;padding:0 1.25rem;border-radius:9999px;background:var(--accent);color:var(--background);font-size:var(--fs-eyebrow);font-weight:600;text-transform:uppercase;letter-spacing:0.14em;transition:background-color 300ms ease-out}
@@ -482,10 +470,6 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
 /* mobile vs shop, and the map after booking a shop visit */
 .d-modes{margin-top:0.375rem;display:flex;flex-wrap:wrap;gap:0.375rem}
 .d-modes span{display:inline-flex;align-items:center;min-height:1.625rem;padding:0 0.625rem;border:1px solid var(--line-strong);border-radius:9999px;font-size:0.8125rem;color:var(--muted)}
-.f-where{border:0;display:flex;flex-direction:column;gap:0.5rem;min-width:0}
-.f-where legend{margin-bottom:0.5rem}
-.f-shopnote{font-size:0.9375rem;color:var(--muted)}
-.f-addr[hidden]{display:none}
 .d-map{grid-column:1/-1;margin-top:0.75rem;display:flex;flex-direction:column;gap:0.625rem}
 .d-map-h{font-size:0.9375rem;font-weight:600}
 .d-map-box{position:relative;width:100%;aspect-ratio:16/10;border-radius:0.75rem;overflow:hidden;border:1px solid var(--line-strong);background:var(--surface-2)}
@@ -509,14 +493,6 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
 }
 /* ---------- add-ons per detailer ---------- */
 .d-adds{margin-top:0.375rem;font-size:0.875rem;line-height:1.5;color:var(--muted)}
-.f-adds{border:0;display:flex;flex-direction:column;gap:0.5rem;min-width:0}
-.f-adds legend{margin-bottom:0.5rem}
-.chk{display:flex;align-items:center;gap:0.75rem;min-height:2.75rem;padding:0.5rem 0.875rem;border:1px solid var(--line-strong);border-radius:0.5rem;color:var(--foreground);font-size:0.9375rem;cursor:pointer;transition:border-color 200ms ease-out}
-.chk input{width:1.25rem;height:1.25rem;accent-color:var(--accent);flex:none}
-.chk span{flex:1;min-width:0}
-.chk b{font-weight:600;font-variant-numeric:tabular-nums}
-.chk:has(input:checked){border-color:var(--accent)}
-.chk small{display:block;margin-top:0.125rem;font-size:0.8125rem;line-height:1.4;color:var(--muted)}
 
 /* ---------- phone-first layer ---------- */
 .hero-zip{display:none}
@@ -558,7 +534,6 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   .d-item{padding-block:1.25rem;column-gap:1rem}
   .d-price b{font-size:2.25rem}
   .d-book{min-height:3rem;flex:1 1 auto;justify-content:center}
-  .f-grid{grid-template-columns:minmax(0,1fr)}
   .nav-cta{display:none}
   .liquid .lq-veil{opacity:0}
   .pkg-row{flex-direction:column;gap:0.75rem}
@@ -1002,13 +977,6 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   const fmt=v=>'$'+(Math.round(v*100)%100?v.toFixed(2):Math.round(v));
   const adds=d=>Array.isArray(d.addons)?d.addons.filter(a=>a&&a.name&&+a.price>0).map(a=>({name:String(a.name),price:+a.price,description:a.description?String(a.description):''})):[];
   const priceOf=(d,k)=>{ if(k==='addons'){ const A=adds(d); if(A.length) return Math.min(...A.map(a=>a.price)) } const v=d[PRICE_KEY[k]]; return typeof v==='number'&&v>0?v:null};
-  // no Gleam service fee: the total is the detailer's price
-  const withFee=s=>Math.round(s*100)/100;
-  const sumHTML=s=>s>0?'<b>Total '+fmt(withFee(s))+'</b>':'';
-  const btnLabel=t=>t>0?'Send request for '+fmt(t):'Send request';
-  const pickedAdds=(d,form)=>[...form.querySelectorAll('input[name=addon]:checked')].map(i=>adds(d)[+i.value]).filter(Boolean);
-  const totalFor=(d,form)=>(cur==='addons'?0:(priceOf(d,cur)||0))+pickedAdds(d,form).reduce((s,a)=>s+a.price,0);
-  function addonBox(d){ const A=adds(d); if(!A.length) return ''; return '<fieldset class="f f-wide f-adds"><legend>'+(cur==='addons'?'Pick your add-ons':'Add-ons (optional)')+'</legend>'+A.map((a,i)=>'<label class="chk"><input type="checkbox" name="addon" value="'+i+'"><span>'+esc(a.name)+(a.description?'<small>'+esc(a.description)+'</small>':'')+'</span><b>'+fmt(a.price)+'</b></label>').join('')+'</fieldset>' }
   const firstName=n=>String(n||'').trim().split(/\s+/)[0]||'your detailer';
   function initials(n){return String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase()}
 
@@ -1052,8 +1020,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   const ZK='gleam-zip', AK='gleam-address', GK='gleam-geo', SK='gleam-geo-skip';
   const GP={id:null,zip:'',address:''};
   try{ GP.zip=localStorage.getItem(ZK)||''; GP.address=localStorage.getItem(AK)||'' }catch(e){}
-  let pinned=null;
-  let cur=null, sortBy='price', openFor=null, sent={}, sentWhere={}, lastFocus=null;
+  let cur=null, sortBy='price', sent={}, sentWhere={}, lastFocus=null;
   try{ const z=localStorage.getItem(ZK); if(/^\d{5}$/.test(z||'')) custZip.value=z }catch(e){}
 
   /* how each detailer works: mobile (drives to you), a shop customers visit, or both */
@@ -1086,8 +1053,8 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     if(loadState==='loading') return empty('Loading detailers…');
     if(loadState==='error') return empty('We couldn’t load detailers right now. Check your connection and try again.');
     const fq=dFilter.value.trim();
-    const rows=DETAILERS.filter(d=>priceOf(d,cur)!=null).map(d=>Object.assign({d},covers(d))).filter(r=>(r.ok||r.d._id===pinned)&&(!fq||matches(r.d,fq)))
-      .sort((a,b)=>(b.d._id===pinned)-(a.d._id===pinned)||(sortBy==='price'?priceOf(a.d,cur)-priceOf(b.d,cur):((a.dist==null?1e9:a.dist)-(b.dist==null?1e9:b.dist))));
+    const rows=DETAILERS.filter(d=>priceOf(d,cur)!=null).map(d=>Object.assign({d},covers(d))).filter(r=>r.ok&&(!fq||matches(r.d,fq)))
+      .sort((a,b)=>sortBy==='price'?priceOf(a.d,cur)-priceOf(b.d,cur):((a.dist==null?1e9:a.dist)-(b.dist==null?1e9:b.dist)));
     if(!rows.length&&fq) return empty('No detailer in this list matches “'+esc(fq)+'”. <button type="button" class="zip-change" data-unfilter>Show everyone</button>');
     if(!rows.length) return empty((custLoc?'No detailers cover '+esc(custLoc.zip)+' for ':'No detailers offer ')+PKG[cur]+' yet. We’re adding detailers every week. <a href="detailers.html">Are you a detailer? Join Gleam</a>');
     sortWrap.hidden=false;
@@ -1096,24 +1063,6 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
       const sub=[r.dist!=null?r.dist.toFixed(1)+' mi away':(custLoc&&r.ok?'Near you':''),where].filter(Boolean).join(' · ')+(r.ok?'':' · <span class="d-out">May not cover your area</span>');
       let act;
       if(sent[d._id+'|'+cur]) act='<p class="d-picked" role="status">Request sent. '+esc(firstName(d.name))+' or the Gleam team will contact you at '+esc(sent[d._id+'|'+cur])+' to confirm a time.'+(sentWhere[d._id+'|'+cur]==='shop'?' You’ll bring your car to the shop below.':'')+'</p>'+(sentWhere[d._id+'|'+cur]==='shop'&&offersShop(d)?mapBlock(d):'');
-      else if(openFor===d._id) act=
-        '<form class="d-form" data-id="'+id+'" data-t="'+Date.now()+'" novalidate>'+
-          '<div class="f-grid">'+
-            '<label class="f"><span>Your name</span><input name="customerName" required autocomplete="name" maxlength="80"></label>'+
-            '<label class="f"><span>Phone</span><input name="phone" type="tel" required autocomplete="tel" maxlength="20"></label>'+
-            '<label class="f"><span>Email (optional)</span><input name="email" type="email" autocomplete="email" maxlength="120"></label>'+
-            (offersMobile(d)&&offersShop(d)?'<fieldset class="f f-wide f-where"><legend>Where should the detail happen?</legend><label class="chk"><input type="radio" name="where" value="mobile" checked><span>Come to me</span></label><label class="chk"><input type="radio" name="where" value="shop"><span>I’ll bring my car to the shop<small>'+esc(shopLine(d))+'</small></span></label></fieldset>':'')+
-            (offersMobile(d)?'<label class="f f-wide f-addr"><span>Where’s the car? (street address)</span><input name="address" required autocomplete="street-address" maxlength="150" placeholder="e.g. 120 Court St, Brooklyn" value="'+esc(GP.address)+'"></label>':'<p class="f f-wide f-shopnote">You’ll bring your car to '+esc(d.shopName||'the shop')+': '+esc(shopLine(d))+'. You’ll get a map after you send the request.</p>')+
-            '<label class="f"><span>When works for you?</span><input name="preferredTime" maxlength="80" placeholder="e.g. Saturday morning"></label>'+
-            addonBox(d)+
-            '<label class="f f-wide"><span>Notes (optional)</span><input name="notes" maxlength="300" placeholder="Car make and model, where it’s parked"></label>'+
-            '<label class="hp" aria-hidden="true">Leave this empty<input name="website" tabindex="-1" autocomplete="off"></label>'+
-          '</div>'+
-          '<p class="f-sum" aria-live="polite">'+sumHTML(cur==='addons'?0:p)+'</p>'+
-          '<p class="f-err" role="alert"></p>'+
-          '<div class="f-actions"><button class="d-book" type="submit">'+btnLabel(withFee(cur==='addons'?0:p))+'</button><button class="d-cancel" type="button" data-cancel>Cancel</button></div>'+
-          '<p class="f-legal">By sending a request you agree to our <a href="/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>'+
-        '</form>';
       else act='<button type="button" class="d-book" data-book="'+id+'">Book '+esc(firstName(d.name))+'</button>';
       return '<li class="d-item'+(sent[d._id+'|'+cur]?' picked':'')+'" style="--d:'+(i*70)+'ms">'+
         '<span class="d-avatar" aria-hidden="true">'+esc(initials(d.name))+'</span>'+
@@ -1130,7 +1079,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     try{localStorage.setItem(ZK,zip); if(!here) localStorage.removeItem(GK)}catch(e){}
     zipNote.textContent=here&&info?'Showing detailers near your location in '+info.city+', '+info.state+', closest first.':info?'Showing detailers who travel to '+info.city+', '+info.state+' '+zip+'.':'Showing detailers in the '+zip.slice(0,3)+'xx area.';
     zipForm.classList.add('has-zip'); document.getElementById('zipChange').textContent='Change address'; document.getElementById('heroZip').classList.add('has-zip');
-    openFor=null; updateCards(); render(); if(window.__gleamFind) window.__gleamFind();
+    updateCards(); render(); if(window.__gleamFind) window.__gleamFind();
   }
   function savedGeo(){ try{ const g=JSON.parse(localStorage.getItem(GK)||'null'); return g&&isFinite(g.lat)&&isFinite(g.lng)&&g.zip===custZip.value?g:null }catch(e){ return null } }
   if(/^\d{5}$/.test(custZip.value)) findZip(custZip.value,savedGeo());
@@ -1139,18 +1088,17 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     if(!/^\d{5}$/.test(zip)){ zipNote.textContent='Enter a 5-digit ZIP code.'; custZip.focus(); return }
     findZip(zip);
   });
-  function openDrawer(k,id){
-    cur=k; openFor=id||null; pinned=id||null; lastFocus=document.activeElement;
+  function openDrawer(k){
+    cur=k; lastFocus=document.activeElement;
     dFilter.value=''; dFilterClear.hidden=true;
     dEyebrow.textContent=PKG[k];
     render(); document.body.classList.add('drawer-open');
     if(lenis) lenis.stop();
     const z=custZip.value.trim();
     if(!custLoc&&/^\d{5}$/.test(z)) findZip(z);
-    setTimeout(()=>{ const i=id&&list.querySelector('.d-form input'); if(i){ i.closest('.d-item').scrollIntoView({block:'start'}); i.focus({preventScroll:true}) } else dClose.focus({preventScroll:true}) },id?120:60);
+    setTimeout(()=>dClose.focus({preventScroll:true}),60);
   }
   function closeDrawer(){
-    pinned=null;
     if(!document.body.classList.contains('drawer-open')) return;
     document.body.classList.remove('drawer-open'); if(lenis) lenis.start();
     if(lastFocus&&lastFocus.focus) lastFocus.focus({preventScroll:true});
@@ -1171,7 +1119,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   });
   sortBtns.forEach(b=>b.addEventListener('click',()=>{sortBy=b.dataset.sort;sortBtns.forEach(x=>x.setAttribute('aria-pressed',String(x===b)));render()}));
   let ft=null;
-  dFilter.addEventListener('input',()=>{ dFilterClear.hidden=!dFilter.value; clearTimeout(ft); ft=setTimeout(()=>{ openFor=null; render() },150) });
+  dFilter.addEventListener('input',()=>{ dFilterClear.hidden=!dFilter.value; clearTimeout(ft); ft=setTimeout(render,150) });
   dFilterClear.addEventListener('click',()=>{ dFilter.value=''; dFilterClear.hidden=true; render(); dFilter.focus() });
 
   /* homepage search: find a detailer by name, shop, city or ZIP, then book a package straight away */
@@ -1363,42 +1311,6 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     if(e.target.closest('[data-unfilter]')){ dFilter.value=''; dFilterClear.hidden=true; render(); dFilter.focus(); return }
     const b=e.target.closest('[data-book]');
     if(b){ const d=DETAILERS.find(x=>x._id===b.dataset.book); if(d) openBook(d,cur); return }
-    if(e.target.closest('[data-cancel]')){ openFor=null; render() }
-  });
-  list.addEventListener('change',e=>{ const form=e.target.closest('.d-form'); if(!form) return; if(e.target.name==='where'){ const a=form.querySelector('.f-addr'); if(a) a.hidden=e.target.value==='shop' } const d=DETAILERS.find(x=>x._id===form.dataset.id); if(d){ const s=totalFor(d,form); form.querySelector('button[type=submit]').textContent=btnLabel(withFee(s)); const sm=form.querySelector('.f-sum'); if(sm) sm.innerHTML=sumHTML(s) } });
-  list.addEventListener('submit',async e=>{
-    const form=e.target.closest('.d-form'); if(!form) return; e.preventDefault();
-    const err=form.querySelector('.f-err'), btn=form.querySelector('button[type=submit]');
-    const v=n=>form.elements[n].value.trim();
-    const bad=(msg,n)=>{ err.textContent=msg; form.querySelectorAll('[aria-invalid]').forEach(x=>x.removeAttribute('aria-invalid')); if(n){ const el=form.elements[n]; el.setAttribute('aria-invalid','true'); el.focus() } };
-    const LINK=/(https?:\/\/|www\.)/i, digits=v('phone').replace(/\D/g,'');
-    if(v('customerName').length<2||LINK.test(v('customerName'))) return bad('Add your name so your detailer knows who to ask for.','customerName');
-    if(digits.length<10||digits.length>15) return bad('Add a phone number with area code so your detailer can confirm the time.','phone');
-    if(v('email')&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('email'))) return bad('Check your email address, or leave it blank.','email');
-    const addrEl=form.querySelector('.f-addr'), needAddr=!!addrEl&&!addrEl.hidden, where=needAddr?'mobile':'shop';
-    if(needAddr&&v('address').length<6) return bad('Add the street address where your car will be.','address');
-    if(LINK.test(v('notes'))||LINK.test(v('preferredTime'))) return bad('Please remove links from your notes.','notes');
-            const d=DETAILERS.find(x=>x._id===form.dataset.id); if(!d) return;
-    const RL='gleam-req', now=Date.now(); let log=[]; try{ log=JSON.parse(localStorage.getItem(RL)||'[]').filter(t=>now-t<36e5) }catch(e){}
-    if(v('website')||now-(+form.dataset.t||0)<2500){ sent[d._id+'|'+cur]=v('phone'); openFor=null; render(); return }
-    if(log.length>=3) return bad('You’ve sent several requests in the last hour. Your detailers will be in touch soon.');
-    const picked=pickedAdds(d,form);
-    if(cur==='addons'&&!picked.length){ err.textContent='Pick at least one add-on.'; return }
-    btn.disabled=true; btn.textContent='Sending…'; err.textContent='';
-    try{
-      // Gleam's server works out the real price from the detailer's listing and saves the request.
-      const r=await fetch('/api/book',{method:'POST',headers:{'Content-Type':'application/json',Authorization:await loginToken()},body:JSON.stringify({
-        package:cur,detailerId:d._id,addons:[...form.querySelectorAll('input[name=addon]:checked')].map(i=>+i.value),
-        serviceType:where,customerName:v('customerName'),phone:v('phone'),email:v('email'),address:needAddr?v('address'):'',zip:custLoc?custLoc.zip:'',preferredTime:v('preferredTime'),notes:v('notes')})});
-      if(!r.ok){
-        if(r.status===429){ btn.disabled=false; btn.textContent=btnLabel(withFee(totalFor(d,form))); return bad('You’ve sent several requests in the last hour. Your detailers will be in touch soon.') }
-        if(r.status===401){ location.assign('/login.html?returnTo=/'); return }
-        throw new Error('book '+r.status);
-      }
-      log.push(Date.now()); try{ localStorage.setItem(RL,JSON.stringify(log)) }catch(e){}
-      sent[d._id+'|'+cur]=v('phone'); sentWhere[d._id+'|'+cur]=where; openFor=null; render();
-      if(needAddr&&custLoc&&(v('address')!==GP.address||custLoc.zip!==GP.zip)) saveProfile(custLoc.zip,v('address')).catch(()=>{});
-    }catch(x){ btn.disabled=false; btn.textContent=btnLabel(withFee(totalFor(d,form))); err.textContent='Your request didn’t go through. Check your connection and try again.' }
   });
 
   /* phone-first: hero ZIP search + sticky book bar */
