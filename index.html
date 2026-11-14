@@ -764,7 +764,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
           <p class="label who-foot" id="whoFoot"></p>
         </div>
         <div class="who-figure" data-reveal style="--y:0px;--dur:640ms">
-          <figure class="liquid" data-liquid="22" id="whoFig"><span class="lq-media" id="whoPh"><img id="whoImg" src="https://static.wixstatic.com/media/cfa77e_8e07e20a4a114d3a9006a7e6703c3fdc~mv2.webp/v1/fill/w_800,h_537,al_c,q_70/exterior.webp" alt="Detailer washing a car in a driveway at dusk" width="800" height="537" loading="lazy" decoding="async"></span></figure>
+          <figure class="liquid" data-liquid="22" id="whoFig"><span class="lq-media" id="whoPh"><img id="whoImg" src="https://images.unsplash.com/photo-1694678505383-676d78ea3b96?w=800&amp;h=537&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72" alt="Detailer hand-washing a foam-covered car with a sponge" width="800" height="537" loading="lazy" decoding="async"></span></figure>
         </div>
       </div>
     </div>
@@ -1535,10 +1535,10 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
 
   /* who it's for */
   const who=[
-    {t:'Your car gets detailed in the parking lot while you are in meetings. Walk out at five to a car that looks new.',f:'Busy commuters — Office lot, gym or garage',img:'https://static.wixstatic.com/media/cfa77e_8e07e20a4a114d3a9006a7e6703c3fdc~mv2.webp/v1/fill/w_800,h_537,al_c,q_70/exterior.webp',alt:'Detailer washing a car in a driveway at dusk'},
-    {t:'Crumbs, juice boxes and muddy cleats. We handle the back seat so your weekend stays yours.',f:'Families — Driveway service',img:'https://static.wixstatic.com/media/cfa77e_50da74bac11943a1a4fcf22b6f527e70~mv2.webp/v1/fill/w_800,h_537,al_c,q_70/interior.webp',alt:'Clean leather car interior being wiped down'},
-    {t:'Careful hand work, quality products, and a detailer who treats your paint the way you do.',f:'Car enthusiasts — Paint care and coatings',img:'https://static.wixstatic.com/media/cfa77e_0385ea0113da45c78a9e3ea42bda8637~mv2.webp/v1/fill/w_800,h_537,al_c,q_70/addons.webp',alt:'Water beading on ceramic-coated paint'},
-    {t:'Choose the details you offer and set your own price for each one. Clients compare, pick you, and book you directly.',f:'Detailers — Set your own prices',img:'https://static.wixstatic.com/media/cfa77e_0a0c321a4a354c878fd5c18b2a937f1d~mv2.webp/v1/fill/w_640,h_440,al_c,q_60/full.webp',alt:'White sports car covered in snow foam'}
+    {t:'Your car gets detailed in the parking lot while you are in meetings. Walk out at five to a car that looks new.',f:'Busy commuters — Office lot, gym or garage',img:'https://images.unsplash.com/photo-1694678505383-676d78ea3b96?w=800&h=537&fit=crop&crop=entropy&fm=webp&q=72',alt:'Detailer hand-washing a foam-covered car with a sponge'},
+    {t:'Crumbs, juice boxes and muddy cleats. We handle the back seat so your weekend stays yours.',f:'Families — Driveway service',img:'https://images.unsplash.com/photo-1771491237218-cbd4a707497e?w=800&h=537&fit=crop&crop=entropy&fm=webp&q=72',alt:'Gloved detailer brushing a car dashboard clean'},
+    {t:'Careful hand work, quality products, and a detailer who treats your paint the way you do.',f:'Car enthusiasts — Paint care and coatings',img:'https://images.unsplash.com/photo-1780558852670-3f49298ecc1f?w=800&h=537&fit=crop&crop=entropy&fm=webp&q=72',alt:'Detailer polishing a car hood with an orbital buffer'},
+    {t:'Choose the details you offer and set your own price for each one. Clients compare, pick you, and book you directly.',f:'Detailers — Set your own prices',img:'https://images.unsplash.com/photo-1607860108358-47c0441e7adb?w=800&h=537&fit=crop&crop=entropy&fm=webp&q=72',alt:'Detailer hand-washing a glossy black car, with wash buckets beside it'}
   ];
   const q=document.getElementById('whoQuote'), foot=document.getElementById('whoFoot'), ph=document.getElementById('whoPh'), fig=document.getElementById('whoFig');
   const btns=[...document.querySelectorAll('.who-btn')]; let active=-1;
@@ -1550,7 +1550,10 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     foot.textContent=who[i].f;
     const im=document.getElementById('whoImg'); im.src=who[i].img; im.alt=who[i].alt;
   }
-  btns.forEach((b,i)=>{ b.addEventListener('click',()=>setActive(i)); b.addEventListener('focus',()=>setActive(i)); b.addEventListener('pointerenter',()=>{ if(canHover.matches) setActive(i) }) });
+  const mouse=matchMedia('(hover: hover) and (pointer: fine)');
+  let warmed=false; const warm=()=>{ if(warmed) return; warmed=true; who.forEach(w=>{ const p=new Image(); p.src=w.img }) };   // load all four so hovering swaps instantly
+  document.getElementById('whoList').addEventListener('pointerenter',warm);
+  btns.forEach((b,i)=>{ b.addEventListener('click',()=>setActive(i)); b.addEventListener('focus',()=>setActive(i)); b.addEventListener('pointerenter',e=>{ if(e.pointerType==='mouse'||mouse.matches) setActive(i) }) });
   setActive(0);
 })();
 </script>
