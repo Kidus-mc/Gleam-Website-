@@ -63,17 +63,24 @@ export default handle(async (req, ctx) => {
 
   // Tell the detailer (and Gleam) right away. A failed alert never fails the booking.
   const who = String(d.name || 'your detailer'), what = NAMES[pkg] + (picked.length ? ' + ' + picked.map(a => a.name).join(', ') : '');
-  const where = serviceType === 'shop' ? 'At your shop' : 'At ' + address + (zip ? ' ' + zip : '');
-  const lines = ['New booking request on Gleam', '', what + ' · ' + money(total), 'When: ' + (preferredTime || 'Flexible'), where,
-    'Customer: ' + customerName + ' · ' + phone + (email ? ' · ' + email : ''), notes ? 'Notes: ' + notes : '', '',
+  const place = serviceType === 'shop' ? shopAddress : address + (zip ? ' ' + zip : '');
+  const where = serviceType === 'shop' ? 'Your shop, ' + place + ' (the customer brings the car)' : place + ' (you go to the customer)';
+  const map = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(place);
+  const when = preferredTime || 'Flexible, ask the customer';
+  const lines = ['You have a new booking on Gleam', '',
+    'Who: ' + customerName + ' · ' + phone + (email ? ' · ' + email : ''),
+    'When: ' + when,
+    'Where: ' + where, 'Map: ' + map,
+    'Job: ' + what + ' · ' + money(total), notes ? 'Notes: ' + notes : '', '',
     'Call or text ' + customerName.split(/\s+/)[0] + ' to confirm, then tap Confirm in your Gleam account.'].filter((l, i, a) => l !== '' || a[i - 1] !== '');
-  const sms = 'Gleam: new request. ' + what + ' ' + money(total) + ', ' + (preferredTime || 'flexible time') + '. ' + customerName + ' ' + phone + '. ' + where + '. Confirm at allgleam.netlify.app/account.html';
+  const sms = 'Gleam: New booking!\nWho: ' + customerName + ', ' + phone + '\nWhen: ' + when + '\nWhere: ' + where + '\n' + map +
+    '\nJob: ' + what + ' ' + money(total) + '\nConfirm at allgleam.netlify.app/account.html';
   const c = await detailerContact(d);
   await quietly(ctx, [
-    sendEmail(c.email, 'New Gleam booking: ' + what + ', ' + (preferredTime || 'flexible time'), lines),
+    sendEmail(c.email, 'New booking: ' + customerName + ', ' + (preferredTime || 'flexible time'), lines),
     sendText(c.phone, sms),
     sendEmail(adminEmail(), '[Gleam] ' + customerName + ' booked ' + who, ['Detailer: ' + who, ...lines]),
-    sendText(adminPhone(), 'Gleam: ' + customerName + ' booked ' + who + ' (' + what + ', ' + (preferredTime || 'flexible') + ').'),
+    sendText(adminPhone(), 'Gleam: ' + customerName + ' booked ' + who + ' (' + what + ', ' + when + ', ' + place + ').'),
   ]);
   return json(200, { ok: true, total });
 });
