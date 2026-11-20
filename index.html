@@ -162,16 +162,6 @@ html.js .hero-car.play .spark{transform:scale(1)}
 @keyframes twinkle{0%,100%{opacity:0.9;transform:scale(1) rotate(0deg)}50%{opacity:0.45;transform:scale(0.72) rotate(45deg)}}
 
 .hero-fade{position:absolute;inset-inline:0;bottom:0;z-index:20;height:26vh;background:linear-gradient(to bottom,transparent,var(--background));pointer-events:none}
-.scroll-cue{position:absolute;z-index:30;bottom:2rem;left:max(var(--gutter),env(safe-area-inset-left,0px));display:none;align-items:center;gap:0.75rem;font-size:var(--fs-eyebrow);text-transform:uppercase;letter-spacing:0.22em;color:var(--muted)}
-.scroll-cue::before{content:"";width:2.5rem;height:1px;background:var(--accent)}
-@media (min-width:640px){.scroll-cue{display:flex}}
-
-/* ---------- marquee ---------- */
-.marquee{overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding-block:2rem}
-.marquee-track{display:flex;width:max-content;flex-wrap:nowrap;animation:marquee 22s linear infinite}
-.marquee-item{display:flex;align-items:center;font-family:var(--font-display);font-size:var(--fs-h2);text-transform:uppercase;letter-spacing:-0.01em;line-height:1;white-space:nowrap}
-.marquee-item::after{content:"";margin-inline:2rem;width:0.625rem;height:0.625rem;border-radius:9999px;background:var(--accent)}
-@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 /* ---------- section heads ---------- */
 .sec-head{display:flex;flex-direction:column;gap:1.5rem}
@@ -215,13 +205,11 @@ html.js .hero-car.play .spark{transform:scale(1)}
 .pkg-cat{margin-top:0.75rem;font-size:var(--fs-eyebrow);text-transform:uppercase;letter-spacing:0.22em;color:var(--muted)}
 
 /* ---------- why gleam ---------- */
-.stats{margin-top:4rem;display:grid;grid-template-columns:minmax(0,1fr);border-top:1px solid var(--line)}
-.stat{display:flex;flex-direction:column;gap:1rem;border-bottom:1px solid var(--line);padding-block:2.5rem}
-.stat dd{font-family:var(--font-display);font-size:var(--fs-display);line-height:1;letter-spacing:-0.01em;transition:color 340ms ease-out}
-.stat:hover dd{color:var(--accent)}
-.stat dt{max-width:20ch;text-transform:uppercase;letter-spacing:0.14em;color:var(--muted)}
-@media (min-width:640px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat:nth-child(2n){border-left:1px solid var(--line);padding-left:2rem}}
-@media (min-width:1024px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.stat{padding-block:3rem}.stat:not(:first-child){border-left:1px solid var(--line);padding-left:2rem}}
+.facts{margin-top:3rem;display:grid;grid-template-columns:minmax(0,1fr);border-top:1px solid var(--line)}
+.facts li{padding-block:1.75rem;border-bottom:1px solid var(--line)}
+.facts h3{font-size:var(--fs-h3);font-weight:500;letter-spacing:-0.01em;line-height:1.2}
+.facts p{margin-top:0.5rem;max-width:44ch;color:var(--muted)}
+@media (min-width:768px){.facts{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:3rem}}
 
 /* ---------- who it's for ---------- */
 .who-grid{margin-top:4rem;display:grid;grid-template-columns:minmax(0,1fr);gap:3rem}
@@ -244,8 +232,6 @@ html.js .hero-car.play .spark{transform:scale(1)}
 .who-figure .liquid{aspect-ratio:4/5}
 .quote{max-width:30ch;font-size:var(--fs-h3);font-weight:500;line-height:1.3;letter-spacing:-0.01em}
 .who-foot{margin-top:2rem}
-html.js .who-figure[data-reveal]{transform:scale(1.06)}
-html.js .who-figure[data-reveal].in{transform:none}
 
 /* ---------- contact ---------- */
 .contact{padding-top:var(--section)}
@@ -487,7 +473,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   .drawer,.drawer-scrim,.d-item{transition:none!important}
   .d-item{opacity:1!important;transform:none!important}
   .preloader{display:none!important}
-  .marquee-track,.spark-glow{animation:none!important}
+  .spark-glow{animation:none!important}
   html.js .rise,html.js .ch,html.js .quote .w,html.js [data-reveal],html.js .car-draw,html.js .spark{transform:none!important;opacity:1!important;stroke-dashoffset:0!important;transition:none!important}
   *{scroll-behavior:auto!important}
 }
@@ -511,17 +497,11 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
   .hero-zip .zip-go{background:var(--accent);color:var(--background)}
   .hero-name{font-size:38vw;transform:translateY(7%)}
   .hero-car{bottom:23vw;width:94vw}
-  .scroll-cue{display:none}
-  .marquee{padding-block:1.25rem}
-  .marquee-item{font-size:2rem}
   .sec-title,.sec-title.big{font-size:2.75rem;line-height:0.95}
   .story-body,.contact-body{font-size:1.125rem}
   .steps li{padding-block:1.5rem}
   .pkg-list{margin-top:2.5rem;row-gap:3rem}
   .pkg-open{width:100%;justify-content:center;min-height:3.25rem}
-  .stats{margin-top:2.5rem}
-  .stat{padding-block:1.75rem;gap:0.5rem}
-  .stat dd{font-size:3.5rem}
   .who-grid{margin-top:2.5rem;gap:2rem}
   .who-btn{padding-block:1.25rem}
   .contact .sec-title{font-size:3rem}
@@ -590,11 +570,10 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
 
   <section class="hero" id="top">
     <div class="hero-top px">
-      <h2 class="roles" id="roles" aria-label="Wash, polish, protect, delivered">
-        <span class="mask"><span class="rise">Wash</span></span>
-        <span class="mask"><span class="rise">Polish</span></span>
-        <span class="mask"><span class="rise">Protect</span></span>
-        <span class="mask"><span class="rise">Delivered</span></span>
+      <h2 class="roles" id="roles" aria-label="Local detailers. Their prices. Your driveway.">
+        <span class="mask"><span class="rise">Local detailers.</span></span>
+        <span class="mask"><span class="rise">Their prices.</span></span>
+        <span class="mask"><span class="rise">Your driveway.</span></span>
       </h2>
       <div class="hero-copy" id="heroCopy" data-reveal style="--y:16px;--dur:520ms">
         <p>Pro car detailing that comes to you. Book in a minute, pick the detailer you want, and drive away gleaming.</p>
@@ -627,28 +606,20 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     </div>
 
     <div class="hero-fade"></div>
-    <div class="scroll-cue" id="scrollCue" data-reveal style="--y:0px;--dur:600ms">Scroll to explore</div>
-  </section>
-
-  <section class="marquee" aria-label="What Gleam stands for">
-    <div class="marquee-track">
-      <span class="marquee-item">Hand Washed</span><span class="marquee-item">Showroom Shine</span><span class="marquee-item">We Come To You</span><span class="marquee-item">Pick Your Detailer</span><span class="marquee-item">Detailed By Pros</span>
-      <span class="marquee-item" aria-hidden="true">Hand Washed</span><span class="marquee-item" aria-hidden="true">Showroom Shine</span><span class="marquee-item" aria-hidden="true">We Come To You</span><span class="marquee-item" aria-hidden="true">Pick Your Detailer</span><span class="marquee-item" aria-hidden="true">Detailed By Pros</span>
-    </div>
   </section>
 
   <section class="section px" id="how">
     <div class="story-grid">
       <div>
         <p class="eyebrow">How It Works</p>
-        <h2 class="sec-title big" data-lines style="max-width:16ch">As easy as calling a ride.</h2>
-        <p class="story-body" data-reveal style="--dur:520ms">No drop-offs, no waiting rooms, no lost Saturday. Tell us where the car is parked, and a Gleam detailer shows up with the gear to bring it back to showroom condition.</p>
+        <h2 class="sec-title big" style="max-width:16ch">As easy as calling a ride.</h2>
+        <p class="story-body">No drop-offs, no waiting rooms, no lost Saturday. Tell us where the car is parked, and a Gleam detailer shows up with the gear to bring it back to showroom condition.</p>
       </div>
       <ol class="steps">
-        <li data-reveal style="--d:0ms"><span class="num">01</span><div><h3>Pick your detail</h3><p>Drop your location and choose the type of detail you want, now or for later.</p></div></li>
-        <li data-reveal style="--d:90ms"><span class="num">02</span><div><h3>Choose your detailer</h3><p>See every detailer nearby who offers that detail, each with their own price. Pick the one that fits.</p></div></li>
-        <li data-reveal style="--d:180ms"><span class="num">03</span><div><h3>They come to you</h3><p>Your detailer calls or texts to confirm the time, then works in your driveway, office lot or curb while you get on with your day. Some also have a shop you can drive to.</p></div></li>
-        <li data-reveal style="--d:270ms"><span class="num">04</span><div><h3>Drive away gleaming</h3><p>Nothing is charged when you book. You pay your detailer once the job is done.</p></div></li>
+        <li><span class="num">01</span><div><h3>Pick your detail</h3><p>Drop your location and choose the type of detail you want, now or for later.</p></div></li>
+        <li><span class="num">02</span><div><h3>Choose your detailer</h3><p>See every detailer nearby who offers that detail, each with their own price. Pick the one that fits.</p></div></li>
+        <li><span class="num">03</span><div><h3>They come to you</h3><p>Your detailer calls or texts to confirm the time, then works in your driveway, office lot or curb while you get on with your day. Some also have a shop you can drive to.</p></div></li>
+        <li><span class="num">04</span><div><h3>Drive away gleaming</h3><p>Nothing is charged when you book. You pay your detailer once the job is done.</p></div></li>
       </ol>
     </div>
   </section>
@@ -657,8 +628,8 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     <div class="sec-head split">
       <div>
         <p class="eyebrow">Packages</p>
-        <h2 class="sec-title big" data-lines style="max-width:14ch">Pick your shine.</h2>
-        <p class="pkg-note" data-reveal style="--dur:520ms">Choose the detail you want, then compare the detailers near you who offer it. Every detailer sets their own price, and you see it before you book.</p>
+        <h2 class="sec-title big" style="max-width:14ch">Pick your shine.</h2>
+        <p class="pkg-note">Choose the detail you want, then compare the detailers near you who offer it. Every detailer sets their own price, and you see it before you book.</p>
       </div>
       <p class="label">Detailers set the price</p>
     </div>
@@ -669,7 +640,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
       <ul class="s-res" id="findRes" aria-label="Matching detailers"></ul>
     </div>
     <ul class="pkg-list">
-      <li data-reveal style="--y:60px;--dur:620ms">
+      <li>
         <article class="pkg" data-pkg="exterior">
           <figure class="liquid" data-liquid="28"><span class="lq-media"><!-- photo: https://unsplash.com/photos/man-washing-bmw-coupe-pLRXgwOefDo (Unsplash License) --><img src="https://images.unsplash.com/photo-1552930294-6b595f4c2974?w=800&amp;h=537&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72" srcset="https://images.unsplash.com/photo-1552930294-6b595f4c2974?w=480&amp;h=322&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 480w, https://images.unsplash.com/photo-1552930294-6b595f4c2974?w=800&amp;h=537&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 800w, https://images.unsplash.com/photo-1552930294-6b595f4c2974?w=1200&amp;h=806&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 1200w" sizes="(max-width: 767px) 100vw, 50vw" width="1200" height="806" alt="Detailer hand-washing a black coupe outdoors" loading="lazy" decoding="async"></span></figure>
           <div class="pkg-row"><div><h3>Exterior</h3><p>Hand wash, wheels and tires, bug and tar removal, and a spray wax finish.</p></div><div class="pkg-meta"><p class="label"><span class="pkg-count" data-count></span></p><p class="pkg-price" data-from></p></div></div>
@@ -677,7 +648,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
           <button type="button" class="pkg-open" data-open>See detailers <span aria-hidden="true">→</span></button>
         </article>
       </li>
-      <li data-reveal style="--y:60px;--dur:620ms;--d:120ms">
+      <li>
         <article class="pkg" data-pkg="interior">
           <figure class="liquid" data-liquid="28"><span class="lq-media"><!-- photo: https://unsplash.com/photos/a-man-cleans-a-car-seat-inside-the-vehicle-diTehTl5O-c (Unsplash License) --><img src="https://images.unsplash.com/photo-1746079074522-2b14240d932c?w=800&amp;h=537&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72" srcset="https://images.unsplash.com/photo-1746079074522-2b14240d932c?w=480&amp;h=322&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 480w, https://images.unsplash.com/photo-1746079074522-2b14240d932c?w=800&amp;h=537&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 800w, https://images.unsplash.com/photo-1746079074522-2b14240d932c?w=1200&amp;h=806&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 1200w" sizes="(max-width: 767px) 100vw, 50vw" width="1200" height="806" alt="Detailer cleaning a car seat inside the vehicle" loading="lazy" decoding="async"></span></figure>
           <div class="pkg-row"><div><h3>Interior</h3><p>Deep vacuum, seats and carpets shampooed, dash and glass wiped down, and odor treatment.</p></div><div class="pkg-meta"><p class="label"><span class="pkg-count" data-count></span></p><p class="pkg-price" data-from></p></div></div>
@@ -685,7 +656,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
           <button type="button" class="pkg-open" data-open>See detailers <span aria-hidden="true">→</span></button>
         </article>
       </li>
-      <li data-reveal style="--y:60px;--dur:620ms">
+      <li>
         <article class="pkg" data-pkg="full">
           <figure class="liquid" data-liquid="28"><span class="lq-media"><!-- photo: https://unsplash.com/photos/man-in-black-jacket-and-pants-leaning-on-black-car-W5yX_dPokH4 (Unsplash License) --><img src="https://images.unsplash.com/photo-1607860108358-47c0441e7adb?w=800&amp;h=537&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72" srcset="https://images.unsplash.com/photo-1607860108358-47c0441e7adb?w=480&amp;h=322&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 480w, https://images.unsplash.com/photo-1607860108358-47c0441e7adb?w=800&amp;h=537&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 800w, https://images.unsplash.com/photo-1607860108358-47c0441e7adb?w=1200&amp;h=806&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 1200w" sizes="(max-width: 767px) 100vw, 50vw" width="1200" height="806" alt="Detailer hand-washing a glossy black car, with wash buckets beside it" loading="lazy" decoding="async"></span></figure>
           <div class="pkg-row"><div><h3>Full Detail</h3><p>Everything in Exterior and Interior, plus a clay bar treatment and a paint sealant.</p></div><div class="pkg-meta"><p class="label"><span class="pkg-count" data-count></span></p><p class="pkg-price" data-from></p></div></div>
@@ -693,7 +664,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
           <button type="button" class="pkg-open" data-open>See detailers <span aria-hidden="true">→</span></button>
         </article>
       </li>
-      <li data-reveal style="--y:60px;--dur:620ms;--d:120ms">
+      <li>
         <article class="pkg" data-pkg="addons">
           <figure class="liquid" data-liquid="28"><span class="lq-media"><!-- photo: https://unsplash.com/photos/a-person-taking-a-picture-of-a-car-gAm_dPRQqvQ (Unsplash License) --><img src="https://images.unsplash.com/photo-1658244546876-d82cbf1a1c9e?w=800&amp;h=537&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72" srcset="https://images.unsplash.com/photo-1658244546876-d82cbf1a1c9e?w=480&amp;h=322&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 480w, https://images.unsplash.com/photo-1658244546876-d82cbf1a1c9e?w=800&amp;h=537&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 800w, https://images.unsplash.com/photo-1658244546876-d82cbf1a1c9e?w=1200&amp;h=806&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72 1200w" sizes="(max-width: 767px) 100vw, 50vw" width="1200" height="806" alt="Detailer polishing a dark car’s paint with a machine buffer" loading="lazy" decoding="async"></span></figure>
           <div class="pkg-row"><div><h3>Add-ons</h3><p>Ceramic coating, pet hair removal, headlight restoration and more. Each detailer lists the add-ons they offer and their price.</p></div><div class="pkg-meta"><p class="label"><span class="pkg-count" data-count></span></p><p class="pkg-price" data-from></p></div></div>
@@ -708,22 +679,22 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     <div class="sec-head">
       <div>
         <p class="eyebrow">Why Gleam</p>
-        <h2 class="sec-title" data-lines style="line-height:1">Built around your time.</h2>
+        <h2 class="sec-title" style="line-height:1">What you can count on.</h2>
       </div>
     </div>
-    <dl class="stats">
-      <div class="stat" data-reveal style="--d:0ms"><dd>60 Sec</dd><dt>To book your detail</dt></div>
-      <div class="stat" data-reveal style="--d:110ms"><dd>0</dd><dt>Trips to the car wash</dt></div>
-      <div class="stat" data-reveal style="--d:220ms"><dd>Your Pick</dd><dt>Of detailer and price</dt></div>
-      <div class="stat" data-reveal style="--d:330ms"><dd>$0</dd><dt>Charged when you book</dt></div>
-    </dl>
+    <ul class="facts">
+      <li><h3>The price, before you book</h3><p>Every detailer lists their own price for each package. You see it, and every add-on, before you send a request.</p></li>
+      <li><h3>Your driveway or their shop</h3><p>Most detailers come to your home or office. Some also have a shop you can drive to. You choose.</p></li>
+      <li><h3>Detailers we've checked</h3><p>Detailers apply with photos of their work, and Gleam reviews every application before anyone is listed.</p></li>
+      <li><h3>Nothing charged to book</h3><p>Sending a request is free. You pay your detailer once the job is done.</p></li>
+    </ul>
   </section>
 
   <section class="section px" id="who">
     <div class="sec-head">
       <div>
         <p class="eyebrow">Who It's For</p>
-        <h2 class="sec-title" data-lines style="line-height:1">Made for your day.</h2>
+        <h2 class="sec-title" style="line-height:1">Made for your day.</h2>
       </div>
     </div>
     <div class="who-grid">
@@ -738,7 +709,7 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
           <p class="quote" id="whoQuote"></p>
           <p class="label who-foot" id="whoFoot"></p>
         </div>
-        <div class="who-figure" data-reveal style="--y:0px;--dur:640ms">
+        <div class="who-figure">
           <figure class="liquid" data-liquid="22" id="whoFig"><span class="lq-media" id="whoPh"><img id="whoImg" src="https://images.unsplash.com/photo-1552930294-6b595f4c2974?w=800&amp;h=537&amp;fit=crop&amp;crop=entropy&amp;fm=webp&amp;q=72" alt="Detailer hand-washing a black coupe outdoors" width="800" height="537" loading="lazy" decoding="async"></span></figure>
         </div>
       </div>
@@ -747,10 +718,10 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
 
   <footer class="contact px" id="contact">
     <p class="eyebrow">Let's Shine</p>
-    <h2 class="sec-title" data-lines>Ready when your car is.</h2>
-    <p class="contact-body" data-reveal style="--dur:520ms">Book your first detail in under a minute. Have a question first? Reach us anytime.</p>
+    <h2 class="sec-title">Ready when your car is.</h2>
+    <p class="contact-body">Book your first detail in under a minute. Have a question first? Message us on Instagram.</p>
     <a href="#packages" class="big-link">Book a detail <span aria-hidden="true">↗</span></a>
-    <div class="contact-line label"><span>[hello@yourdomain.com]</span><span>[(000) 000-0000]</span><span>Now serving [YOUR SERVICE AREA]</span></div>
+    <div class="contact-line label"><a href="https://www.instagram.com/gleamdetailin.g/" target="_blank" rel="noopener">Instagram @gleamdetailin.g</a></div>
 
     <div class="foot-bar">
       <div>
@@ -864,37 +835,15 @@ body:has(#wixheadless-banner-container) .m-bar{padding-bottom:calc(4.5rem + env(
     const t=line.textContent; line.textContent='';
     [...t].forEach((c,i)=>{const s=document.createElement('span');s.className='ch';s.setAttribute('aria-hidden','true');s.textContent=c;s.style.setProperty('--d',(li*240+i*52)+'ms');line.appendChild(s)});
   });
-  function splitLines(el){
-    const text=el.textContent.trim(); el.dataset.text=text; el.setAttribute('aria-label',text);
-    el.innerHTML=text.split(/\s+/).map(w=>'<span class="w">'+w+'</span>').join(' ');
-    const words=[...el.querySelectorAll('.w')]; const lines=[]; let top=null;
-    words.forEach(w=>{const t=w.offsetTop; if(top===null||Math.abs(t-top)>4){lines.push([]);top=t} lines[lines.length-1].push(w.textContent)});
-    el.innerHTML=lines.map((l,i)=>'<span class="mask" aria-hidden="true"><span class="rise" style="--d:'+(i*90)+'ms;--dur:880ms">'+l.join(' ')+'</span></span>').join('');
-  }
-  const headings=[...document.querySelectorAll('[data-lines]')];
-
-  /* in-view */
-  const io=('IntersectionObserver' in window)?new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){en.target.classList.add(en.target.hasAttribute('data-reveal')?'in':'play');io.unobserve(en.target)}}),{threshold:0}):null;
-  function watch(el){ if(io) io.observe(el); else el.classList.add(el.hasAttribute('data-reveal')?'in':'play') }
-
-  const fontsReady=(document.fonts&&document.fonts.ready)?Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,1500))]):Promise.resolve();
-  fontsReady.then(()=>{
-    headings.forEach(h=>{splitLines(h);watch(h)});
-    document.querySelectorAll('[data-reveal]').forEach(el=>{ if(!el.closest('.hero')) watch(el) });
-  });
-  let rw=innerWidth;
-  addEventListener('resize',()=>{ if(Math.abs(innerWidth-rw)<40) return; rw=innerWidth; headings.forEach(h=>{ if(h.classList.contains('play')){h.innerHTML='<span class="mask"><span class="rise">'+h.dataset.text+'</span></span>'} }) });
-
   /* preloader + hero sequence */
   const pre=document.getElementById('preloader'), num=document.getElementById('plNum');
-  const hero={name:document.getElementById('heroName'),roles:document.getElementById('roles'),copy:document.getElementById('heroCopy'),car:document.getElementById('heroCar'),cue:document.getElementById('scrollCue')};
+  const hero={name:document.getElementById('heroName'),roles:document.getElementById('roles'),copy:document.getElementById('heroCopy'),car:document.getElementById('heroCar')};
   [...hero.roles.querySelectorAll('.rise')].forEach((r,i)=>{r.style.setProperty('--d',(i*80)+'ms');r.style.setProperty('--dur','760ms')});
   function playHero(base){
     setTimeout(()=>hero.name.classList.add('play'),base);
     setTimeout(()=>hero.roles.classList.add('play'),base+200);
     setTimeout(()=>hero.car.classList.add('play'),base+300);
     setTimeout(()=>hero.copy.classList.add('in'),base+400);
-    setTimeout(()=>hero.cue.classList.add('in'),base+900);
   }
   let PL_SEEN=false; try{ PL_SEEN=sessionStorage.getItem('gleam-pl')==='1'; sessionStorage.setItem('gleam-pl','1') }catch(e){}
   if(reduce||PL_SEEN){ pre.classList.add('done'); playHero(0); }
